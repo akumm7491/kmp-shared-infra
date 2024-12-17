@@ -1,0 +1,91 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build with Gradle
+      run: ./gradlew build
+
+    - name: Run tests
+      run: ./gradlew test
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push Service A
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        file: ./microservices/service-a/Dockerfile
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/service-a:${{ github.sha }}
+
+    - name: Build and push Service B
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        file: ./microservices/service-b/Dockerfile
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/service-b:${{ github.sha }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Configure kubectl
+      run: |
+        echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig.yaml
+        echo "KUBECONFIG=$(pwd)/kubeconfig.yaml" >> $GITHUB_ENV
+
+    - name: Update Kubernetes manifests
+      run: |
+        cd infra/k8s-manifests
+        sed -i "s|image: service-a:latest|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/service-a:${{ github.sha }}|g" service-a.yaml
+        sed -i "s|image: service-b:latest|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/service-b:${{ github.sha }}|g" service-b.yaml
+
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl apply -f infra/k8s-manifests/
