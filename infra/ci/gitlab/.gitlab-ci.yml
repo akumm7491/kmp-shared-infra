@@ -1,0 +1,62 @@
+variables:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  DOCKER_REGISTRY: "registry.gitlab.com"
+
+stages:
+  - test
+  - build
+  - deploy
+
+.kotlin-cache:
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .gradle
+      - build
+      - */build
+
+test:
+  stage: test
+  image: openjdk:17-jdk
+  extends: .kotlin-cache
+  script:
+    - ./gradlew test
+  artifacts:
+    reports:
+      junit: build/test-results/test/**/TEST-*.xml
+
+build:
+  stage: build
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  script:
+    - docker build -t $DOCKER_REGISTRY/$CI_PROJECT_PATH:$CI_COMMIT_SHA .
+    - docker push $DOCKER_REGISTRY/$CI_PROJECT_PATH:$CI_COMMIT_SHA
+
+.deploy-template:
+  image: alpine/helm:3.11.1
+  script:
+    - helm upgrade --install $CI_ENVIRONMENT_SLUG
+      ./deploy/helm/charts/service-base
+      -f ./deploy/helm/values/$CI_ENVIRONMENT_SLUG/values.yaml
+      --set image.repository=$DOCKER_REGISTRY/$CI_PROJECT_PATH
+      --set image.tag=$CI_COMMIT_SHA
+      --namespace $CI_ENVIRONMENT_SLUG
+
+deploy-staging:
+  stage: deploy
+  extends: .deploy-template
+  environment:
+    name: staging
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+deploy-prod:
+  stage: deploy
+  extends: .deploy-template
+  environment:
+    name: prod
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  when: manual

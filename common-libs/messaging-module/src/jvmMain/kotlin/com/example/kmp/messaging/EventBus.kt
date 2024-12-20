@@ -1,30 +1,30 @@
 package com.example.kmp.messaging
-
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.kafka.clients.producer.ProducerRecord
-import java.util.Properties
+import com.example.kmp.messaging.EventProducer
+import com.example.kmp.messaging.EventConsumer
+import com.example.kmp.messaging.Event
+import com.example.kmp.messaging.EventProcessor
 
 actual class EventBus {
-    private val producer by lazy {
-        val props = Properties().apply {
-            put("bootstrap.servers", System.getenv("KAFKA_BOOTSTRAP_SERVERS") ?: "localhost:9092")
-            put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-            put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-        }
-        KafkaProducer<String, String>(props)
-    }
+    private val producer = EventProducer()
+    private val consumer = EventConsumer()
 
     actual suspend fun publish(topic: String, event: Event) {
-        withContext(Dispatchers.IO) {
-            val record = ProducerRecord(topic, event.type, event.payload)
-            producer.send(record)
-        }
+        producer.publish(topic, event)
     }
 
     actual suspend fun subscribe(topic: String, handler: suspend (Event) -> Unit) {
-        // Stub implementation - in real code, would set up a Kafka consumer
-        println("Subscribed to topic: $topic")
+        val processor = object : EventProcessor {
+            override suspend fun process(event: Event): Boolean {
+                handler(event)
+                return true
+            }
+            
+            override suspend fun handleError(event: Event, error: Throwable) {
+                // Log error or handle based on application needs
+                println("Error processing event: ${error.message}")
+            }
+        }
+        
+        consumer.consume(topic, processor)
     }
 }

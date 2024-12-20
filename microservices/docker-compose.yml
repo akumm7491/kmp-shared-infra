@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # Core Infrastructure Services
+  api-gateway:
+    build:
+      context: ..
+      dockerfile: microservices/api-gateway/Dockerfile
+    ports:
+      - '8000:8000'
+    environment:
+      REGISTRY_URL: http://service-registry:8761
+      CONFIG_SERVER_URL: http://config-server:8888
+    depends_on:
+      - service-registry
+      - config-server
+    networks:
+      - kmp-core-network
+
+  service-registry:
+    build:
+      context: ..
+      dockerfile: microservices/service-registry/Dockerfile
+    ports:
+      - '8761:8761'
+    environment:
+      SERVER_PORT: 8761
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: 'false'
+      EUREKA_CLIENT_FETCH_REGISTRY: 'false'
+    networks:
+      - kmp-core-network
+
+  config-server:
+    build:
+      context: ..
+      dockerfile: microservices/config-server/Dockerfile
+    ports:
+      - '8888:8888'
+    volumes:
+      - ./config-repo:/config-repo
+    environment:
+      SERVER_PORT: 8888
+      SPRING_PROFILES_ACTIVE: native
+      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS: /config-repo
+    networks:
+      - kmp-core-network
+
+  monitoring:
+    build:
+      context: ..
+      dockerfile: microservices/monitoring-service/Dockerfile
+    ports:
+      - '9090:9090'
+    volumes:
+      - prometheus-data:/prometheus
+    environment:
+      PROMETHEUS_CONFIG_PATH: /etc/prometheus/prometheus.yml
+    networks:
+      - kmp-core-network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - '3000:3000'
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    depends_on:
+      - monitoring
+    networks:
+      - kmp-core-network
+
+networks:
+  kmp-core-network:
+    name: kmp-core-network
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:

@@ -1,0 +1,32 @@
+environment: prod
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+monitoring:
+  enabled: true
+  scrapeInterval: 10s
+  alerting:
+    enabled: true
+    slackWebhook: "${SLACK_WEBHOOK_URL}"
+    pagerDuty:
+      enabled: true
+      routingKey: "${PAGERDUTY_KEY}"
+
+kafka:
+  enabled: true
+  bootstrapServers: "kafka-prod:9092"
+  replicationFactor: 3
+  partitions: 12
+
+env:
+  LOG_LEVEL: INFO
+  MONITORING_ENABLED: "true"
+  TRACING_ENABLED: "true"
+  RATE_LIMIT_RPS: "500"
+  CIRCUIT_BREAKER_THRESHOLD: "0.5"

@@ -1,0 +1,17 @@
+- targets:
+    - 'template-service:8080'
+  labels:
+    service: 'template-service'
+    env: 'local'
+
+- targets:
+    - 'service-a:8080'
+  labels:
+    service: 'service-a'
+    env: 'local'
+
+- targets:
+    - 'service-b:8080'
+  labels:
+    service: 'service-b'
+    env: 'local'

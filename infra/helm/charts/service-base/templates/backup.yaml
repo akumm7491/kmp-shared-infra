@@ -1,0 +1,20 @@
+{{- if .Values.backup.enabled }}
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: {{ include "service-base.fullname" . }}-backup
+  labels:
+    {{- include "service-base.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  template:
+    includedNamespaces:
+      - {{ .Release.Namespace }}
+    labelSelector:
+      matchLabels:
+        {{- include "service-base.selectorLabels" . | nindent 8 }}
+    storageLocation: default
+    volumeSnapshotLocations:
+      - default
+    ttl: {{ .Values.backup.retention }}
+{{- end }}

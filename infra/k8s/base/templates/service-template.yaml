@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $(SERVICE_NAME)
+  labels:
+    app: $(SERVICE_NAME)
+spec:
+  replicas: $(REPLICAS)
+  selector:
+    matchLabels:
+      app: $(SERVICE_NAME)
+  template:
+    metadata:
+      labels:
+        app: $(SERVICE_NAME)
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8080"
+    spec:
+      containers:
+      - name: $(SERVICE_NAME)
+        image: $(IMAGE_REGISTRY)/$(SERVICE_NAME):$(IMAGE_TAG)
+        ports:
+        - containerPort: 8080
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          valueFrom:
+            configMapKeyRef:
+              name: kafka-config
+              key: bootstrap.servers
+        - name: SERVICE_NAME
+          value: $(SERVICE_NAME)
+        - name: ENVIRONMENT
+          value: $(ENVIRONMENT)
+        envFrom:
+        - configMapRef:
+            name: $(SERVICE_NAME)-config
+        - secretRef:
+            name: $(SERVICE_NAME)-secrets
+            optional: true
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: $(MEMORY_REQUEST)
+            cpu: $(CPU_REQUEST)
+          limits:
+            memory: $(MEMORY_LIMIT)
+            cpu: $(CPU_LIMIT)
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: $(SERVICE_NAME)
+spec:
+  selector:
+    app: $(SERVICE_NAME)
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080

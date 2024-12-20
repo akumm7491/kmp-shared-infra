@@ -1,0 +1,31 @@
+server:
+  port: 8080
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://service-registry:8761/eureka/
+  instance:
+    preferIpAddress: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+logging:
+  level:
+    root: INFO
+    com.example.kmp: DEBUG
+
+resilience:
+  retry:
+    maxAttempts: 3
+    backoffPeriod: 1000
+  circuitBreaker:
+    failureThreshold: 5
+    resetTimeout: 60000
+  rateLimit:
+    requestLimit: 100
+    timeWindow: 60000 

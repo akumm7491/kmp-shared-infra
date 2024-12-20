@@ -1,0 +1,29 @@
+variantLabels:
+- environment
+- service
+
+commonLabels:
+- app.kubernetes.io/name
+- app.kubernetes.io/instance
+- app.kubernetes.io/version
+- app.kubernetes.io/component
+- app.kubernetes.io/part-of
+- app.kubernetes.io/managed-by
+
+nameReference:
+- kind: Service
+  fieldSpecs:
+  - path: spec/serviceName
+    kind: StatefulSet
+  - path: spec/rules/http/paths/backend/service/name
+    kind: Ingress
+  - path: spec/backend/serviceName
+    kind: Ingress
+
+namespace:
+- kind: RoleBinding
+  path: subjects/namespace
+  create: true
+- kind: NetworkPolicy
+  path: spec/ingress/from/namespaceSelector/matchLabels/kubernetes.io/metadata.name
+  create: true

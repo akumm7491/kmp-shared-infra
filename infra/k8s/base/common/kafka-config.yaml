@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-config
+  namespace: kmp-services
+data:
+  bootstrap.servers: "kafka-broker:9092"
+  schema.registry.url: "http://schema-registry:8081"
+  security.protocol: "PLAINTEXT"
+  auto.register.schemas: "true"
+  use.latest.version: "true"

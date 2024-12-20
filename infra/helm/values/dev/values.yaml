@@ -1,0 +1,22 @@
+environment: dev
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+monitoring:
+  enabled: true
+  scrapeInterval: 30s
+
+kafka:
+  enabled: true
+  bootstrapServers: "kafka-dev:9092"
+
+env:
+  LOG_LEVEL: DEBUG
+  MONITORING_ENABLED: "true"
+  TRACING_ENABLED: "true"

@@ -1,0 +1,92 @@
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    exclude:
+      - docs/*
+      - '*.md'
+
+variables:
+  - group: kmp-shared-vars
+  - name: GRADLE_USER_HOME
+    value: $(Pipeline.Workspace)/.gradle
+
+stages:
+- stage: Test
+  jobs:
+  - job: UnitTest
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Gradle@2
+      inputs:
+        gradleWrapperFile: 'gradlew'
+        tasks: 'test'
+        publishJUnitResults: true
+        testResultsFiles: '**/TEST-*.xml'
+        javaHomeOption: 'JDKVersion'
+        jdkVersionOption: '1.17'
+        gradleOptions: '-Xmx3072m'
+        sonarQubeRunAnalysis: true
+
+- stage: Build
+  jobs:
+  - job: BuildAndPush
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'acr-connection'
+        repository: '$(Build.Repository.Name)'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+- stage: DeployDev
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+  jobs:
+  - deployment: Deploy
+    environment: development
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: HelmDeploy@0
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: 'azure-connection'
+              azureResourceGroup: 'kmp-dev-rg'
+              kubernetesCluster: 'kmp-dev-aks'
+              namespace: 'dev'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: './deploy/helm/charts/service-base'
+              valueFile: './deploy/helm/values/dev/values.yaml'
+              arguments: '--set image.tag=$(Build.BuildId)'
+
+- stage: DeployProd
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - deployment: Deploy
+    environment: production
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: HelmDeploy@0
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: 'azure-connection'
+              azureResourceGroup: 'kmp-prod-rg'
+              kubernetesCluster: 'kmp-prod-aks'
+              namespace: 'prod'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: './deploy/helm/charts/service-base'
+              valueFile: './deploy/helm/values/prod/values.yaml'
+              arguments: '--set image.tag=$(Build.BuildId)'

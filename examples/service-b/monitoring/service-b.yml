@@ -1,0 +1,10 @@
+scrape_configs:
+  - job_name: 'service-b'
+    static_configs:
+      - targets: ['service-b:8082']
+        labels:
+          service: 'service-b'
+          environment: 'local'
+          type: 'event-processor'
+    metrics_path: '/metrics'
+    scrape_interval: 15s

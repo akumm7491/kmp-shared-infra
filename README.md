@@ -1,100 +1,160 @@
-# KMP Shared Infrastructure Project
+# KMP Shared Infrastructure
 
-This project demonstrates a Kotlin Multiplatform (KMP) microservices architecture with shared modules and infrastructure components.
+A shared infrastructure platform that provides common services, monitoring, and deployment tools for Kotlin Multiplatform projects.
 
-## Project Structure
+## Overview
 
-```
-my-kmp-project/
-├── common-libs/              # Shared KMP modules
-│   ├── auth-module/         # Authentication and authorization
-│   ├── messaging-module/    # Kafka/event bus integration
-│   └── storage-module/      # Database/storage utilities
-├── template-service/        # Template for new microservices
-├── microservices/          # Concrete service implementations
-│   ├── service-a/
-│   └── service-b/
-├── infra/                  # Infrastructure configurations
-│   ├── docker-compose.yml
-│   ├── prometheus/
-│   └── k8s-manifests/
-└── tooling/                # Development tools
-    └── ScaffoldTool.kt     # Service scaffolding utility
-```
+This repository contains:
+- Shared infrastructure components (Kafka, Prometheus, etc.)
+- Common libraries and modules
+- Deployment tools and templates
+- Documentation and examples
 
 ## Getting Started
 
 ### Prerequisites
+- Kubernetes cluster
+- kubectl
+- Helm 3
+- envsubst
 
-- JDK 17+
-- Docker and Docker Compose
-- Kubernetes cluster (optional)
+### Setting Up Core Infrastructure
 
-### Building the Project
-
+1. Deploy core namespaces:
 ```bash
-./gradlew build
+kubectl apply -f infra/k8s/namespaces/core.yaml
 ```
 
-### Running Locally with Docker Compose
-
+2. Deploy shared services:
 ```bash
-cd infra
-docker-compose up
+# Deploy monitoring stack
+helm upgrade --install monitoring ./infra/helm/charts/monitoring \
+  --namespace shared-monitoring
+
+# Deploy shared resources (Kafka, etc.)
+helm upgrade --install resources ./infra/helm/charts/resources \
+  --namespace shared-resources
 ```
 
-This will start:
-- Kafka and Zookeeper
-- Service A (port 8081)
-- Service B (port 8082)
-- Prometheus (port 9090)
-- Grafana (port 3000)
+### Project Integration
 
-### Creating a New Service
-
-Use the scaffold tool:
-
+1. Create project namespaces:
 ```bash
-cd tooling
-./gradlew run --args="--service-name=my-new-service --port=8083"
+./tools/scripts/setup-project-namespaces.sh --project my-app
 ```
 
-### Testing
-
-Run all tests:
+2. Deploy your service:
 ```bash
-./gradlew test
+./tools/scripts/deploy-service.sh \
+  --service my-service \
+  --project my-app \
+  --env dev \
+  --port 8080 \
+  --replicas 2
 ```
 
-### Deployment
+## Repository Structure
 
-For Kubernetes deployment:
-```bash
-kubectl apply -f infra/k8s-manifests/
+```
+.
+├── common-libs/           # Shared Kotlin libraries
+│   ├── auth-module/
+│   ├── messaging-module/
+│   ├── monitoring-module/
+│   └── networking-module/
+│
+├── docs/                  # Documentation
+│   ├── architecture/
+│   ├── deployment/
+│   └── infrastructure/
+│
+├── examples/             # Example services and implementations
+│   ├── demo-service/
+│   ├── service-a/
+│   └── template-service/
+│
+├── infra/               # Infrastructure configuration
+│   ├── helm/
+│   │   ├── charts/
+│   │   └── values/
+│   ├── k8s/
+│   │   ├── namespaces/
+│   │   └── templates/
+│   └── terraform/
+│
+└── tools/               # Scripts and utilities
+    └── scripts/
+        ├── setup-project-namespaces.sh
+        └── deploy-service.sh
 ```
 
-## Shared Modules
+## Common Libraries
 
-### Auth Module
-Provides token validation and authentication utilities.
+The platform provides several shared libraries:
 
-### Messaging Module
-Implements event bus functionality using Kafka.
+- **auth-module**: Authentication and authorization
+- **messaging-module**: Kafka messaging integration
+- **monitoring-module**: Metrics and logging
+- **networking-module**: HTTP client and server utilities
 
-### Storage Module
-Provides abstract storage operations for databases or file systems.
+### Using Common Libraries
 
-## Monitoring
+Add dependencies to your project's build.gradle.kts:
+```kotlin
+dependencies {
+    implementation("com.example.kmp:auth-module:1.0.0")
+    implementation("com.example.kmp:messaging-module:1.0.0")
+    // ... other modules as needed
+}
+```
 
-- Prometheus: http://localhost:9090
-- Grafana: http://localhost:3000 (admin/admin)
+## Infrastructure Components
+
+### Core Services
+- **Monitoring Stack**: Prometheus, Grafana, Alert Manager
+- **Message Queue**: Kafka, Schema Registry
+- **Logging**: ELK Stack
+
+### Namespaces
+- **shared-infra**: Core infrastructure components
+- **shared-monitoring**: Centralized monitoring
+- **shared-resources**: Shared services (Kafka, etc.)
+
+## Development Workflow
+
+1. **Create Project Structure**
+   - Use project namespace template
+   - Set up environment-specific configurations
+
+2. **Implement Services**
+   - Use common libraries
+   - Follow monitoring guidelines
+   - Implement health checks
+
+3. **Deploy Services**
+   - Use deployment scripts
+   - Configure environment variables
+   - Set up monitoring
 
 ## Contributing
 
-1. Create a feature branch
-2. Make your changes
+1. Fork the repository
+2. Create a feature branch
 3. Submit a pull request
+
+## Documentation
+
+- [Architecture Overview](docs/architecture/README.md)
+- [Deployment Guide](docs/deployment/README.md)
+- [Infrastructure Guide](docs/infrastructure/README.md)
+
+## Support
+
+For issues and questions:
+1. Check the documentation
+2. Search existing issues
+3. Create a new issue if needed
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the LICENSE file for details.

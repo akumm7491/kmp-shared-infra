@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kmp-services-monitor
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: kmp-services
+  namespaceSelector:
+    matchNames:
+      - kmp-services
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 15s

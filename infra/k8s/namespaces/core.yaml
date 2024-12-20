@@ -1,0 +1,29 @@
+---
+# Core Infrastructure Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shared-infra
+  labels:
+    type: infrastructure
+    component: core
+---
+# Shared Monitoring Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shared-monitoring
+  labels:
+    type: infrastructure
+    component: monitoring
+---
+# Shared Resources Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shared-resources
+  labels:
+    type: infrastructure
+    component: shared-resources
+  annotations:
+    description: "Namespace for shared resources like databases, message queues, etc."

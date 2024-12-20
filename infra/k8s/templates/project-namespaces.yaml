@@ -1,0 +1,26 @@
+# Template for project-specific namespaces
+# Replace PROJECT_NAME with your project's name (e.g., my-app)
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${PROJECT_NAME}-dev
+  labels:
+    project: ${PROJECT_NAME}
+    environment: development
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${PROJECT_NAME}-staging
+  labels:
+    project: ${PROJECT_NAME}
+    environment: staging
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${PROJECT_NAME}-prod
+  labels:
+    project: ${PROJECT_NAME}
+    environment: production

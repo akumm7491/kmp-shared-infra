@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  service-a:
+    build:
+      context: ..
+      dockerfile: examples/service-a/Dockerfile
+    ports:
+      - '8081:8081'
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      MONITORING_ENABLED: 'true'
+    networks:
+      - kmp-app-network
+      - kmp-monitoring-network
+
+  service-b:
+    build:
+      context: ..
+      dockerfile: examples/service-b/Dockerfile
+    ports:
+      - '8082:8082'
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      MONITORING_ENABLED: 'true'
+    depends_on:
+      - service-a
+    networks:
+      - kmp-app-network
+      - kmp-monitoring-network
+
+  demo-service:
+    build:
+      context: ..
+      dockerfile: examples/demo-service/Dockerfile
+    ports:
+      - '8083:8083'
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      MONITORING_ENABLED: 'true'
+      SERVICE_A_URL: http://service-a:8081
+    depends_on:
+      - service-a
+    networks:
+      - kmp-app-network
+      - kmp-monitoring-network
+
+  template-service:
+    build:
+      context: ..
+      dockerfile: examples/template-service/Dockerfile
+    ports:
+      - '8080:8080'
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      MONITORING_ENABLED: 'true'
+    networks:
+      - kmp-app-network
+      - kmp-monitoring-network
+
+networks:
+  kmp-app-network:
+    external: true
+  kmp-monitoring-network:
+    external: true

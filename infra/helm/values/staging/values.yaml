@@ -1,0 +1,27 @@
+environment: staging
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+monitoring:
+  enabled: true
+  scrapeInterval: 15s
+  alerting:
+    enabled: true
+    slackWebhook: "${SLACK_WEBHOOK_URL}"
+
+kafka:
+  enabled: true
+  bootstrapServers: "kafka-staging:9092"
+  replicationFactor: 2
+
+env:
+  LOG_LEVEL: INFO
+  MONITORING_ENABLED: "true"
+  TRACING_ENABLED: "true"
+  RATE_LIMIT_RPS: "100"

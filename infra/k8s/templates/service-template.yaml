@@ -1,0 +1,115 @@
+# Template for deploying services to the shared infrastructure
+# Replace variables with your service's values:
+# ${SERVICE_NAME} - Name of your service
+# ${PROJECT_NAME} - Name of your project
+# ${ENVIRONMENT} - Environment (dev/staging/prod)
+# ${CONTAINER_PORT} - Port your service listens on
+# ${REPLICAS} - Number of replicas to run
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${SERVICE_NAME}
+  namespace: ${PROJECT_NAME}-${ENVIRONMENT}
+  labels:
+    app: ${SERVICE_NAME}
+    project: ${PROJECT_NAME}
+    environment: ${ENVIRONMENT}
+spec:
+  replicas: ${REPLICAS}
+  selector:
+    matchLabels:
+      app: ${SERVICE_NAME}
+  template:
+    metadata:
+      labels:
+        app: ${SERVICE_NAME}
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '${CONTAINER_PORT}'
+        prometheus.io/path: '/metrics'
+    spec:
+      containers:
+        - name: ${SERVICE_NAME}
+          image: ${SERVICE_NAME}:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: ${CONTAINER_PORT}
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '100m'
+            limits:
+              memory: '512Mi'
+              cpu: '200m'
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: ${CONTAINER_PORT}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: ${CONTAINER_PORT}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          env:
+            # Shared Infrastructure Configuration
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka.shared-resources:9092
+            - name: PROMETHEUS_PUSHGATEWAY
+              value: pushgateway.shared-monitoring:9091
+            # Service Configuration
+            - name: SERVICE_NAME
+              value: ${SERVICE_NAME}
+            - name: ENVIRONMENT
+              value: ${ENVIRONMENT}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${SERVICE_NAME}
+  namespace: ${PROJECT_NAME}-${ENVIRONMENT}
+  labels:
+    app: ${SERVICE_NAME}
+    project: ${PROJECT_NAME}
+    environment: ${ENVIRONMENT}
+spec:
+  selector:
+    app: ${SERVICE_NAME}
+  ports:
+    - port: 80
+      targetPort: ${CONTAINER_PORT}
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ${SERVICE_NAME}-network-policy
+  namespace: ${PROJECT_NAME}-${ENVIRONMENT}
+spec:
+  podSelector:
+    matchLabels:
+      app: ${SERVICE_NAME}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              environment: ${ENVIRONMENT}
+      ports:
+        - protocol: TCP
+          port: ${CONTAINER_PORT}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              type: infrastructure
+      ports:
+        - protocol: TCP
+          port: 9092 # Kafka
+        - protocol: TCP
+          port: 9091 # Prometheus Pushgateway

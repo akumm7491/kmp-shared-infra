@@ -1,0 +1,9 @@
+apiVersion: v2
+name: event-service
+description: A Helm chart for event-driven microservices
+type: application
+version: 0.1.0
+dependencies:
+  - name: service-base
+    version: 0.1.0
+    repository: file://../service-base

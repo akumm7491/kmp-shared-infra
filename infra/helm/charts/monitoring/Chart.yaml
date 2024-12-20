@@ -1,0 +1,12 @@
+apiVersion: v2
+name: kmp-monitoring
+description: Monitoring stack for KMP microservices
+type: application
+version: 0.1.0
+dependencies:
+  - name: kube-prometheus-stack
+    version: 45.7.1
+    repository: https://prometheus-community.github.io/helm-charts
+  - name: loki-stack
+    version: 2.9.10
+    repository: https://grafana.github.io/helm-charts

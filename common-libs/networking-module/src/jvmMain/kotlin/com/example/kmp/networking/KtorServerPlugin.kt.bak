@@ -1,0 +1,48 @@
+package com.example.kmp.networking
+
+import io.ktor.server.application.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
+import io.ktor.server.routing.*
+import io.ktor.server.plugins.*
+import io.ktor.server.plugins.callloging.*
+import io.ktor.server.plugins.contentnegotiation.*
+
+class KtorServerConfig {
+    var port: Int = 8080
+    var host: String = "0.0.0.0"
+}
+
+val KtorServer = createApplicationPlugin(
+    name = "KtorServer",
+    createConfiguration = ::KtorServerConfig
+) {
+    val config = pluginConfig
+
+    application.environment.monitor.subscribe(ApplicationStarted) { app ->
+        val engine = embeddedServer(Netty, port = config.port, host = config.host) {
+            // Copy plugins from parent application
+            app.pluginRegistry.plugins.forEach { (key, plugin) ->
+                if (key.name != KtorServer.name) {  // Avoid recursive installation
+                    install(key) {
+                        plugin.installation?.invoke(this)
+                    }
+                }
+            }
+            
+            // Copy routes if routing is configured
+            val routingPlugin = app.pluginRegistry.plugins.entries
+                .firstOrNull { it.key.name == Routing.key.name }
+            
+            routingPlugin?.let {
+                routing {
+                    with(it.value) {
+                        installation?.invoke(this)
+                    }
+                }
+            }
+        }
+        
+        engine.start(wait = false)
+    }
+}

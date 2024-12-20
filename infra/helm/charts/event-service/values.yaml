@@ -1,0 +1,50 @@
+service-base:
+  kafka:
+    enabled: true
+    topics:
+      - name: events
+        partitions: 12
+        replicationFactor: 3
+        configs:
+          retention.ms: 604800000  # 7 days
+          cleanup.policy: delete
+      - name: dead-letters
+        partitions: 3
+        replicationFactor: 3
+        configs:
+          retention.ms: 2592000000  # 30 days
+          cleanup.policy: delete
+
+  config:
+    CONSUMER_GROUP_ID: "${SERVICE_NAME}-group"
+    MAX_POLL_RECORDS: "500"
+    PROCESSING_PARALLELISM: "4"
+    DEAD_LETTER_TOPIC: "dead-letters"
+    RETRY_BACKOFF_MS: "1000"
+    MAX_RETRY_ATTEMPTS: "3"
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+
+  monitoring:
+    enabled: true
+    rules:
+      - alert: EventProcessingDelay
+        expr: rate(event_processing_delay_seconds_sum[5m]) > 60
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Event processing delay is high
+      - alert: DeadLetterQueueGrowing
+        expr: rate(dead_letter_messages_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Messages are being sent to DLQ

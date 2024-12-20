@@ -1,0 +1,73 @@
+name: Deploy to Kubernetes
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'microservices/**'
+      - 'common-libs/**'
+      - 'k8s/**'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push Service A
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        file: microservices/service-a/Dockerfile
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/service-a:${{ github.sha }}
+
+    - name: Build and push Service B
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        file: microservices/service-b/Dockerfile
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/service-b:${{ github.sha }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+
+    - name: Configure kubectl
+      run: |
+        echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig.yaml
+        echo "KUBECONFIG=$(pwd)/kubeconfig.yaml" >> $GITHUB_ENV
+
+    - name: Update Kubernetes manifests
+      run: |
+        cd k8s/base
+        kustomize edit set image service-a=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/service-a:${{ github.sha }}
+        kustomize edit set image service-b=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/service-b:${{ github.sha }}
+
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl apply -k k8s/base

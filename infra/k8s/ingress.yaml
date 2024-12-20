@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kmp-services-ingress
+  namespace: kmp-services
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /service-a
+        pathType: Prefix
+        backend:
+          service:
+            name: service-a
+            port:
+              number: 8081
+      - path: /service-b
+        pathType: Prefix
+        backend:
+          service:
+            name: service-b
+            port:
+              number: 8082
