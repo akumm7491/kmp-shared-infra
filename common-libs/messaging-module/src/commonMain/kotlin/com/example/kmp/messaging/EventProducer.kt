@@ -1,6 +1,6 @@
 package com.example.kmp.messaging
 
-interface EventProducer {
+expect class EventProducer() {
     /**
      * Publish an event to the specified topic
      * @param topic The topic to publish the event to
@@ -12,4 +12,8 @@ interface EventProducer {
      * Close the producer and release resources
      */
     suspend fun close()
+
+    companion object {
+        fun create(): EventProducer
+    }
 }

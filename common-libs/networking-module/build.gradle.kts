@@ -38,10 +38,16 @@ kotlin {
                 implementation(libs.ktor.server.content.negotiation)
                 implementation(libs.ktor.server.call.logging)
                 implementation(libs.ktor.server.status.pages)
+                implementation(libs.ktor.server.cors)
                 
                 // Koin
                 implementation(libs.koin.ktor)
                 implementation(libs.koin.logger)
+                
+                // Service Discovery
+                implementation(libs.netflix.eureka.client)
+                implementation(libs.netflix.eureka.core)
+                implementation(libs.typesafe.config)
                 
                 implementation(libs.logback)
                 

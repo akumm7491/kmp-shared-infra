@@ -1,0 +1,39 @@
+# Weather Service Configuration
+server:
+  port: 8084
+
+spring:
+  application:
+    name: weather-service
+
+eureka:
+  client:
+    registerWithEureka: true
+    fetchRegistry: true
+    serviceUrl:
+      defaultZone: http://service-registry:8761/eureka/
+  instance:
+    preferIpAddress: true
+    leaseRenewalIntervalInSeconds: 10
+    leaseExpirationDurationInSeconds: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: weather-service
+    export:
+      prometheus:
+        enabled: true
+
+# Weather Service Specific Configuration
+weather:
+  update:
+    interval: 300  # Update weather data every 5 minutes
+  metrics:
+    enabled: true
+  kafka:
+    topic: weather.update

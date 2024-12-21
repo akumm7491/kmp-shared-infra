@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  weather-service:
+    build:
+      context: ../..  # Root of the project for accessing common-libs
+      dockerfile: examples/weather-service/Dockerfile
+    ports:
+      - '8084:8084'
+    environment:
+      # Core infrastructure connections
+      REGISTRY_URL: http://service-registry:8761/eureka
+      CONFIG_SERVER_URL: http://config-server:8888
+      
+      # Messaging configuration
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      
+      # Monitoring
+      MONITORING_ENABLED: 'true'
+      
+      # Service specific
+      SERVICE_TYPE: producer
+      PORT: 8084
+      HOST: 0.0.0.0
+      SPRING_APPLICATION_NAME: weather-service
+    networks:
+      - core-network
+      - app-network
+      - monitoring-network
+
+  # Consumer service that processes weather updates
+  weather-consumer:
+    build:
+      context: ../..
+      dockerfile: examples/weather-service/Dockerfile
+    ports:
+      - '8085:8085'
+    environment:
+      # Core infrastructure connections
+      REGISTRY_URL: http://service-registry:8761/eureka
+      CONFIG_SERVER_URL: http://config-server:8888
+      
+      # Messaging configuration
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      
+      # Monitoring
+      MONITORING_ENABLED: 'true'
+      
+      # Service specific
+      SERVICE_TYPE: consumer
+      PORT: 8085
+      HOST: 0.0.0.0
+      SPRING_APPLICATION_NAME: weather-consumer
+      CONSUMER_PORT: 8085
+      CONSUMER_APPLICATION_NAME: weather-consumer
+    depends_on:
+      - weather-service
+    networks:
+      - core-network
+      - app-network
+      - monitoring-network
+
+networks:
+  core-network:
+    external: 
+      name: kmp-core-network
+  app-network:
+    external: 
+      name: kmp-app-network
+  monitoring-network:
+    external:
+      name: kmp-monitoring-network

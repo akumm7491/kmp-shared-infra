@@ -1,0 +1,20 @@
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+  - pattern: kafka.schema.registry<type=(.+), name=(.+)><>Value
+    name: schema_registry_$1_$2
+    type: GAUGE
+  - pattern: kafka.schema.registry<type=(.+), name=(.+)><>Count
+    name: schema_registry_$1_$2_count
+    type: COUNTER
+  - pattern: kafka.schema.registry<type=(.+), name=(.+)><>(\d+)thPercentile
+    name: schema_registry_$1_$2
+    type: GAUGE
+    labels:
+      quantile: "0.$3"
+  - pattern: kafka.schema.registry<type=(.+), name=(.+)><>Mean
+    name: schema_registry_$1_$2_mean
+    type: GAUGE
+  - pattern: kafka.schema.registry<type=(.+), name=(.+)><>OneMinuteRate
+    name: schema_registry_$1_$2_one_minute_rate
+    type: GAUGE

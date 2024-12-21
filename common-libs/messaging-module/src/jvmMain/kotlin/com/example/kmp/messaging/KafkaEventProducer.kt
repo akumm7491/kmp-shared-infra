@@ -3,32 +3,43 @@ package com.example.kmp.messaging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringSerializer
 import java.util.Properties
 
-class KafkaEventProducer : EventProducer {
-    private val producer by lazy {
+class KafkaEventProducer {
+    private val producer: KafkaProducer<String, ByteArray> by lazy {
         val props = Properties().apply {
-            put("bootstrap.servers", System.getenv("KAFKA_BOOTSTRAP_SERVERS") ?: "localhost:9092")
-            put("key.serializer", StringSerializer::class.java.name)
-            put("value.serializer", StringSerializer::class.java.name)
-            // Add additional producer configs for reliability
-            put("acks", "all")
-            put("retries", 3)
-            put("linger.ms", 1)
+            // Kafka connection
+            put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, 
+                System.getenv("KAFKA_BOOTSTRAP_SERVERS") ?: "localhost:9092")
+            
+            // Serializers
+            put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java.name)
+            put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer::class.java.name)
+            
+            // Producer reliability configs
+            put(ProducerConfig.ACKS_CONFIG, "all")
+            put(ProducerConfig.RETRIES_CONFIG, 3)
+            put(ProducerConfig.LINGER_MS_CONFIG, 1)
         }
-        KafkaProducer<String, String>(props)
+        KafkaProducer<String, ByteArray>(props)
     }
 
-    override suspend fun publish(topic: String, event: Event) {
+    suspend fun publish(topic: String, event: Event) {
         withContext(Dispatchers.IO) {
-            val record = ProducerRecord(topic, event.type, event.payload)
+            val record = ProducerRecord(
+                topic,
+                event.type,
+                event.payload.toByteArray(Charsets.UTF_8)
+            )
             producer.send(record).get() // Wait for acknowledgment
         }
     }
 
-    override suspend fun close() {
+    suspend fun close() {
         withContext(Dispatchers.IO) {
             producer.flush()
             producer.close()

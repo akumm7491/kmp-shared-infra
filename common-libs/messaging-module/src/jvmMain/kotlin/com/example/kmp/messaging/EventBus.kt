@@ -1,12 +1,8 @@
 package com.example.kmp.messaging
-import com.example.kmp.messaging.EventProducer
-import com.example.kmp.messaging.EventConsumer
-import com.example.kmp.messaging.Event
-import com.example.kmp.messaging.EventProcessor
 
 actual class EventBus {
-    private val producer = EventProducer()
-    private val consumer = EventConsumer()
+    private val producer = KafkaEventProducer()
+    private val consumer = KafkaEventConsumer()
 
     actual suspend fun publish(topic: String, event: Event) {
         producer.publish(topic, event)

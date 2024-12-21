@@ -11,6 +11,9 @@ allprojects {
         maven {
             url = uri("https://repo1.maven.org/maven2/")
         }
+        maven {
+            url = uri("https://packages.confluent.io/maven/")
+        }
     }
 }
 

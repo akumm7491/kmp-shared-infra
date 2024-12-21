@@ -2,94 +2,80 @@ package com.example.kmp.messaging
 
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
+import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import java.time.Duration
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
 
-class KafkaEventConsumer : EventConsumer {
-    private val consumerJobs = ConcurrentHashMap<String, Job>()
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+class KafkaEventConsumer(
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+) {
+    private val consumers = ConcurrentHashMap<String, Pair<KafkaConsumer<String, ByteArray>, Job>>()
     
-    private fun createConsumer(groupId: String): KafkaConsumer<String, String> {
-        val props = Properties().apply {
-            put("bootstrap.servers", System.getenv("KAFKA_BOOTSTRAP_SERVERS") ?: "localhost:9092")
-            put("group.id", groupId)
-            put("key.deserializer", StringDeserializer::class.java.name)
-            put("value.deserializer", StringDeserializer::class.java.name)
-            put("auto.offset.reset", "earliest")
-            put("enable.auto.commit", "true")
-        }
-        return KafkaConsumer<String, String>(props)
-    }
-
-    override suspend fun consume(topic: String, processor: EventProcessor) {
-        if (consumerJobs.containsKey(topic)) {
-            throw IllegalStateException("Already consuming from topic: $topic")
-        }
-
-        val consumer = createConsumer("consumer-${topic}-${System.currentTimeMillis()}")
-        consumer.subscribe(listOf(topic))
-
+    suspend fun consume(topic: String, processor: EventProcessor) {
+        // Stop existing consumer for this topic if it exists
+        stop(topic)
+        
+        val consumer = createConsumer("group-$topic")
         val job = scope.launch {
             try {
-                processor.onStart()
+                consumer.subscribe(listOf(topic))
                 while (isActive) {
-                    val records = withContext(Dispatchers.IO) {
-                        consumer.poll(Duration.ofMillis(100))
-                    }
-                    
-                    for (record in records) {
-                        try {
-                            val event = Event(
-                                type = record.key() ?: "",
-                                payload = record.value() ?: "",
-                                timestamp = record.timestamp()
-                            )
-                            
-                            processor.process(event)
-                        } catch (e: Exception) {
-                            processor.handleError(
-                                Event(
-                                    type = record.key() ?: "",
-                                    payload = record.value() ?: "",
-                                    timestamp = record.timestamp()
-                                ),
-                                e
-                            )
+                    consumer.poll(Duration.ofMillis(100))?.forEach { record ->
+                        launch {
+                            try {
+                                val event = Json.decodeFromString<Event>(String(record.value()))
+                                processor.process(event)
+                            } catch (e: Exception) {
+                                println("Error processing event: ${e.message}")
+                            }
                         }
                     }
                 }
-            } catch (e: CancellationException) {
-                // Normal cancellation, cleanup
-                withContext(NonCancellable) {
-                    processor.onStop()
-                    consumer.close()
-                }
             } catch (e: Exception) {
-                // Unexpected error
-                withContext(NonCancellable) {
-                    processor.onStop()
-                    consumer.close()
-                }
-                throw e
+                println("Consumer error: ${e.message}")
             }
         }
         
-        consumerJobs[topic] = job
+        consumers[topic] = consumer to job
     }
 
-    override suspend fun stop(topic: String) {
-        consumerJobs.remove(topic)?.let { job ->
+    suspend fun stop(topic: String) {
+        consumers.remove(topic)?.let { (consumer, job) ->
             job.cancelAndJoin()
+            withContext(Dispatchers.IO) {
+                consumer.close()
+            }
         }
     }
 
-    override suspend fun stopAll() {
-        consumerJobs.values.forEach { job ->
-            job.cancelAndJoin()
+    suspend fun stopAll() {
+        consumers.keys.forEach { topic ->
+            stop(topic)
         }
-        consumerJobs.clear()
+    }
+    
+    private fun createConsumer(groupId: String): KafkaConsumer<String, ByteArray> {
+        val props = Properties().apply {
+            // Kafka connection
+            put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, 
+                System.getenv("KAFKA_BOOTSTRAP_SERVERS") ?: "localhost:9092")
+            
+            // Consumer group
+            put(ConsumerConfig.GROUP_ID_CONFIG, groupId)
+            
+            // Deserializers
+            put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer::class.java.name)
+            put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer::class.java.name)
+            
+            // Consumer configs
+            put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+            put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
+            put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000")
+        }
+        return KafkaConsumer(props)
     }
 }

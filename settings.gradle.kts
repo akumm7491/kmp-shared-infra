@@ -25,3 +25,6 @@ include(":microservices:monitoring-service")
 
 // Tools
 include(":tools")
+
+// Examples
+include(":examples:weather-service")

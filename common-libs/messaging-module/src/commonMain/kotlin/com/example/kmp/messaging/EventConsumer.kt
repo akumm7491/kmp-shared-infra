@@ -1,6 +1,6 @@
 package com.example.kmp.messaging
 
-interface EventConsumer {
+expect class EventConsumer() {
     /**
      * Start consuming events from the specified topic
      * @param topic The topic to consume events from
@@ -18,4 +18,8 @@ interface EventConsumer {
      * Stop consuming events from all topics
      */
     suspend fun stopAll()
+
+    companion object {
+        fun create(): EventConsumer
+    }
 }
