@@ -27,7 +27,7 @@ class KafkaEventConsumer(
                     consumer.poll(Duration.ofMillis(100))?.forEach { record ->
                         launch {
                             try {
-                                val event = Json.decodeFromString<Event>(String(record.value()))
+                                val event = Json { ignoreUnknownKeys = true }.decodeFromString<Event>(String(record.value()))
                                 processor.process(event)
                             } catch (e: Exception) {
                                 println("Error processing event: ${e.message}")

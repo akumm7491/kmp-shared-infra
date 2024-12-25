@@ -2,18 +2,18 @@ package com.example.kmp.monitoring
 
 import io.ktor.server.application.*
 import io.ktor.server.metrics.micrometer.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.serialization.kotlinx.json.*
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import org.slf4j.LoggerFactory
 import java.time.Instant
 
+/**
+ * Ktor-specific implementation of MetricsProvider using Micrometer
+ */
 class KtorMetricsProvider(
     private val registry: PrometheusMeterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
 ) : MetricsProvider {
+
     override fun incrementCounter(name: String, tags: Map<String, String>) {
         registry.counter(name, tags.map { (k, v) -> io.micrometer.core.instrument.Tag.of(k, v) })
             .increment()
@@ -30,38 +30,27 @@ class KtorMetricsProvider(
             .record(java.time.Duration.ofMillis(durationMs.toLong()))
     }
 
+    override fun getMetrics(): Map<String, Any> {
+        return mapOf("metrics" to registry.scrape())
+    }
+
+    // Ktor-specific extension function
     fun install(application: Application) {
         application.install(MicrometerMetrics) {
             registry = this@KtorMetricsProvider.registry
-            meterBinders = listOf()
-        }
-
-        application.install(ContentNegotiation) {
-            json()
-        }
-
-        application.routing {
-            get("/metrics") {
-                call.respond(registry.scrape())
-            }
-
-            get("/health") {
-                // We can extend this later to include component health checks
-                call.respond(mapOf(
-                    "status" to "UP",
-                    "timestamp" to System.currentTimeMillis(),
-                    "components" to mapOf(
-                        "service" to "UP"
-                    )
-                ))
-            }
         }
     }
+
+    // Access to raw registry for Ktor-specific use cases
+    fun getRegistry(): PrometheusMeterRegistry = registry
 }
 
+/**
+ * Ktor-specific implementation of LogProvider using SLF4J
+ */
 class KtorLogProvider(
     private val serviceName: String,
-    private val logger: org.slf4j.Logger = LoggerFactory.getLogger(KtorLogProvider::class.java)
+    private val logger: org.slf4j.Logger = LoggerFactory.getLogger(serviceName)
 ) : LogProvider {
     private fun enrichMetadata(metadata: Map<String, Any>): Map<String, Any> {
         return metadata + mapOf(
@@ -71,28 +60,38 @@ class KtorLogProvider(
     }
 
     override fun info(message: String, metadata: Map<String, Any>) {
-        logger.info("$message ${enrichMetadata(metadata)}")
+        logger.info("$message ${formatMetadata(enrichMetadata(metadata))}")
     }
 
     override fun warn(message: String, metadata: Map<String, Any>) {
-        logger.warn("$message ${enrichMetadata(metadata)}")
+        logger.warn("$message ${formatMetadata(enrichMetadata(metadata))}")
     }
 
     override fun error(message: String, error: Throwable?, metadata: Map<String, Any>) {
-        logger.error("$message ${enrichMetadata(metadata)}", error)
+        if (error != null) {
+            logger.error("$message ${formatMetadata(enrichMetadata(metadata))}", error)
+        } else {
+            logger.error("$message ${formatMetadata(enrichMetadata(metadata))}")
+        }
     }
 
     override fun debug(message: String, metadata: Map<String, Any>) {
-        logger.debug("$message ${enrichMetadata(metadata)}")
+        logger.debug("$message ${formatMetadata(enrichMetadata(metadata))}")
+    }
+
+    private fun formatMetadata(metadata: Map<String, Any>): String {
+        if (metadata.isEmpty()) return ""
+        return metadata.entries.joinToString(prefix = "[", postfix = "]") { "${it.key}=${it.value}" }
     }
 }
 
-object MonitoringFactory {
-    fun createMetricsProvider(): KtorMetricsProvider {
-        return KtorMetricsProvider()
-    }
+/**
+ * Ktor-specific implementation of MonitoringFactory
+ */
+object KtorMonitoringFactory : MonitoringFactory {
+    private val metricsProvider by lazy { KtorMetricsProvider() }
 
-    fun createLogProvider(serviceName: String): LogProvider {
-        return KtorLogProvider(serviceName)
-    }
+    override fun createMetricsProvider(): MetricsProvider = metricsProvider
+
+    override fun createLogProvider(serviceName: String): LogProvider = KtorLogProvider(serviceName)
 }

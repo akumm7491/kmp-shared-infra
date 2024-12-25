@@ -20,7 +20,7 @@ fun Application.configureServiceDiscovery(serviceConfig: ServiceConfig) {
     System.setProperty("eureka.name", serviceConfig.serviceName)
     System.setProperty("eureka.registration.enabled", "true")
     System.setProperty("eureka.port", serviceConfig.serviceUrl.substringAfterLast(":"))
-    System.setProperty("eureka.serviceUrl.default", "${serviceConfig.registryUrl}/eureka/")
+    System.setProperty("eureka.serviceUrl.default", serviceConfig.registryUrl)
 
     // Create Eureka instance configuration
     val instanceConfig = MyDataCenterInstanceConfig()

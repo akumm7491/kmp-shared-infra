@@ -1,30 +1,52 @@
 plugins {
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
-    jvm()
+    jvm {
+        jvmToolchain(17)
+        withJava()
+        testRuns["test"].executionTask.configure {
+            useJUnitPlatform()
+        }
+    }
     
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+                implementation(libs.kotlin.stdlib)
+                implementation(libs.kotlinx.coroutines)
+                implementation(libs.kotlinx.serialization.json)
+                
+                // Database
+                implementation(libs.exposed.core)
+                implementation(libs.exposed.dao)
+                implementation(libs.exposed.jdbc)
+                implementation(libs.hikaricp)
             }
         }
         
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation(kotlin("test-common"))
+                implementation(kotlin("test-annotations-common"))
+                implementation(project(":common-libs:testing-module"))
             }
         }
         
         val jvmMain by getting {
             dependencies {
-                implementation("org.jetbrains.exposed:exposed-core:0.44.1")
-                implementation("org.jetbrains.exposed:exposed-dao:0.44.1")
-                implementation("org.jetbrains.exposed:exposed-jdbc:0.44.1")
+                implementation(libs.slf4j.api)
+                implementation(libs.logback)
+            }
+        }
+        
+        val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("test-junit5"))
+                implementation(project(":common-libs:testing-module"))
             }
         }
     }
