@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   weather-service:
+    container_name: weather-service
     build:
       context: ../..  # Root of the project for accessing common-libs
       dockerfile: examples/weather-service/Dockerfile
@@ -9,7 +10,7 @@ services:
       - '8084:8084'
     environment:
       # Core infrastructure connections
-      REGISTRY_URL: http://service-registry:8761/eureka
+      REGISTRY_URL: http://service-registry:8761
       CONFIG_SERVER_URL: http://config-server:8888
       
       # Messaging configuration
@@ -22,8 +23,10 @@ services:
       # Service specific
       SERVICE_TYPE: producer
       PORT: 8084
-      HOST: 0.0.0.0
-      SPRING_APPLICATION_NAME: weather-service
+      HOST: weather-service
+      APPLICATION_NAME: WEATHER-SERVICE
+      EUREKA_INSTANCE_INSTANCE_ID: weather-service:WEATHER-SERVICE:8084
+      EUREKA_INSTANCE_HOSTNAME: weather-service
     networks:
       - core-network
       - app-network
@@ -31,6 +34,7 @@ services:
 
   # Consumer service that processes weather updates
   weather-consumer:
+    container_name: weather-consumer
     build:
       context: ../..
       dockerfile: examples/weather-service/Dockerfile
@@ -38,7 +42,7 @@ services:
       - '8085:8085'
     environment:
       # Core infrastructure connections
-      REGISTRY_URL: http://service-registry:8761/eureka
+      REGISTRY_URL: http://service-registry:8761
       CONFIG_SERVER_URL: http://config-server:8888
       
       # Messaging configuration
@@ -51,10 +55,12 @@ services:
       # Service specific
       SERVICE_TYPE: consumer
       PORT: 8085
-      HOST: 0.0.0.0
-      SPRING_APPLICATION_NAME: weather-consumer
+      HOST: weather-consumer
+      APPLICATION_NAME: WEATHER-CONSUMER
       CONSUMER_PORT: 8085
-      CONSUMER_APPLICATION_NAME: weather-consumer
+      CONSUMER_APPLICATION_NAME: WEATHER-CONSUMER
+      EUREKA_INSTANCE_INSTANCE_ID: weather-consumer:WEATHER-CONSUMER:8085
+      EUREKA_INSTANCE_HOSTNAME: weather-consumer
     depends_on:
       - weather-service
     networks:
@@ -64,11 +70,11 @@ services:
 
 networks:
   core-network:
-    external: 
-      name: kmp-core-network
+    name: kmp-core-network
+    external: true
   app-network:
-    external: 
-      name: kmp-app-network
+    name: kmp-app-network
+    external: true
   monitoring-network:
-    external:
-      name: kmp-monitoring-network
+    name: kmp-monitoring-network
+    external: true

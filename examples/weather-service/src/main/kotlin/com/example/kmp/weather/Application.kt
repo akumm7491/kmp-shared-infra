@@ -1,6 +1,7 @@
 package com.example.kmp.weather
 
 import com.example.kmp.messaging.EventProducer
+import com.example.kmp.messaging.schema.SchemaRegistrationExtension
 import com.example.kmp.monitoring.MetricsRegistry
 import com.example.kmp.monitoring.configureMonitoring
 import com.example.kmp.networking.configureNetworking
@@ -18,6 +19,13 @@ import com.example.kmp.weather.service.WeatherService
 import kotlinx.coroutines.*
 
 fun main() {
+    // Initialize schema registration
+    val schemaRegistryUrl = System.getenv("SCHEMA_REGISTRY_URL") ?: "http://schema-registry:8081"
+    SchemaRegistrationExtension.initializeAndRegisterSchemas(
+        schemaRegistryUrl = schemaRegistryUrl,
+        basePackage = "com.example.kmp.weather.model"
+    )
+
     embeddedServer(
         Netty,
         port = WeatherConfig.port,
@@ -26,9 +34,17 @@ fun main() {
 }
 
 fun Application.weatherModule() {
-    // Configure content negotiation
+    // Configure service discovery first to ensure proper registration
+    configureServiceDiscovery(WeatherConfig.serviceConfig)
+
+    // Configure content negotiation with consistent JSON settings
     install(ContentNegotiation) {
-        json()
+        json(kotlinx.serialization.json.Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+            isLenient = true
+            allowSpecialFloatingPointValues = true
+        })
     }
 
     // Configure shared infrastructure components
@@ -44,9 +60,6 @@ fun Application.weatherModule() {
         weatherService.startMonitoring()
     }
     
-    // Configure service discovery (adds health endpoint)
-    configureServiceDiscovery(WeatherConfig.serviceConfig)
-    
     routing {
         get("/api/v1/weather/{city}") {
             val city = call.parameters["city"] ?: throw IllegalArgumentException("City parameter is required")
@@ -58,8 +71,7 @@ fun Application.weatherModule() {
         }
 
         get("/metrics") {
-            // Metrics endpoint is automatically configured by the monitoring module
-            call.respond(HttpStatusCode.OK)
+            call.respond(MetricsRegistry.getRegistry().scrape())
         }
     }
 }

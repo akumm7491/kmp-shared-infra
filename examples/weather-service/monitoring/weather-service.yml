@@ -1,5 +1,5 @@
-- targets:
-    - 'weather-service:8084'
+- targets: ['weather-service:8084']
   labels:
     service: 'weather-service'
     environment: 'local'
+    type: 'http-service'

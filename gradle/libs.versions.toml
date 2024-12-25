@@ -3,12 +3,32 @@ kotlin = "1.9.20"
 kotlinx-serialization ="1.6.0"
 ktor = "2.3.6"
 logback = "1.4.11"
+kotest = "5.8.0"
+logback-contrib = "0.1.5"
+jackson = "2.15.2"
+junit = "5.10.0"
+junit-platform = "1.10.0"
 micrometer = "1.11.5"
 coroutines = "1.7.3"
 netflix-eureka = "1.10.17"
 typesafe-config = "1.4.2"
 kaml = "0.49.0"
 koin = "3.4.3"
+exposed = "0.44.1"
+hikari = "5.0.1"
+kafka = "3.6.1"
+confluent = "7.5.1"
+avro = "1.11.3"
+reflections = "0.10.2"
+slf4j = "2.0.9"
+jakarta-validation = "3.0.2"
+hibernate-validator = "8.0.1.Final"
+turbine = "1.0.0"
+mockk = "1.13.8"
+cucumber = "7.14.0"
+arrow = "1.2.0"
+kotlinx-html = "0.9.1"
+commons-cli = "1.5.0"
 
 [libraries]
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
@@ -23,6 +43,12 @@ kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core",
 netflix-eureka-client = { module = "com.netflix.eureka:eureka-client", version.ref = "netflix-eureka" }
 netflix-eureka-core = { module = "com.netflix.eureka:eureka-core", version.ref = "netflix-eureka" }
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+logback-core = { module = "ch.qos.logback:logback-core", version.ref = "logback" }
+logback-contrib-json-classic = { module = "ch.qos.logback.contrib:logback-json-classic", version.ref = "logback-contrib" }
+logback-contrib-jackson = { module = "ch.qos.logback.contrib:logback-jackson", version.ref = "logback-contrib" }
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 micrometer-core = { module = "io.micrometer:micrometer-core", version.ref = "micrometer" }
 micrometer-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
 micrometer-ktor = { module = "io.ktor:ktor-server-metrics-micrometer", version.ref = "ktor" }
@@ -31,6 +57,7 @@ kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
@@ -38,8 +65,69 @@ koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 koin-logger = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
 ktor-server-call-id = { module = "io.ktor:ktor-server-call-id", version.ref = "ktor" }
 ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor" }
+ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
+ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = "ktor" }
+ktor-server-sessions = { module = "io.ktor:ktor-server-sessions", version.ref = "ktor" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+
+# Database dependencies
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
+
+# Messaging dependencies
+kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
+kafka-schema-registry = { module = "io.confluent:kafka-schema-registry-client", version.ref = "confluent" }
+kafka-avro-serializer = { module = "io.confluent:kafka-avro-serializer", version.ref = "confluent" }
+avro = { module = "org.apache.avro:avro", version.ref = "avro" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+reflections = { module = "org.reflections:reflections", version.ref = "reflections" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+
+# Validation dependencies
+jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakarta-validation" }
+hibernate-validator = { module = "org.hibernate.validator:hibernate-validator", version.ref = "hibernate-validator" }
+
+# Testing dependencies
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
+junit-platform-engine = { module = "org.junit.platform:junit-platform-engine", version.ref = "junit-platform" }
+junit-platform-commons = { module = "org.junit.platform:junit-platform-commons", version.ref = "junit-platform" }
+junit-platform-console = { module = "org.junit.platform:junit-platform-console", version.ref = "junit-platform" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+mockk-dsl = { module = "io.mockk:mockk-dsl-jvm", version.ref = "mockk" }
+mockk-agent = { module = "io.mockk:mockk-agent-jvm", version.ref = "mockk" }
+
+# BDD testing
+cucumber-java = { module = "io.cucumber:cucumber-java", version.ref = "cucumber" }
+cucumber-junit-platform = { module = "io.cucumber:cucumber-junit-platform-engine", version.ref = "cucumber" }
+cucumber-java8 = { module = "io.cucumber:cucumber-java8", version.ref = "cucumber" }
+cucumber-picocontainer = { module = "io.cucumber:cucumber-picocontainer", version.ref = "cucumber" }
+cucumber-core = { module = "io.cucumber:cucumber-core", version.ref = "cucumber" }
+cucumber-gherkin = { module = "io.cucumber:cucumber-gherkin", version.ref = "cucumber" }
+cucumber-expressions = { module = "io.cucumber:cucumber-expressions", version.ref = "cucumber" }
+
+# Arrow dependencies
+arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
+arrow-fx-stm = { module = "io.arrow-kt:arrow-fx-stm", version.ref = "arrow" }
+
+# Kotest
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
+
+# HTML generation
+kotlinx-html = { module = "org.jetbrains.kotlinx:kotlinx-html-jvm", version.ref = "kotlinx-html" }
+
+# CLI parsing
+commons-cli = { module = "commons-cli:commons-cli", version.ref = "commons-cli" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
