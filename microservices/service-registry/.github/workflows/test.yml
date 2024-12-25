@@ -1,0 +1,105 @@
+name: Service Registry Tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'microservices/service-registry/**'
+      - 'common-libs/**'
+      - 'gradle/**'
+      - '*.gradle.kts'
+      - 'gradle.properties'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'microservices/service-registry/**'
+      - 'common-libs/**'
+      - 'gradle/**'
+      - '*.gradle.kts'
+      - 'gradle.properties'
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run tests
+        run: |
+          ./gradlew :microservices:service-registry:test \
+            --no-daemon \
+            --console=plain \
+            --stacktrace \
+            -Dorg.gradle.jvmargs="-Xmx2g -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError"
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-reports
+          path: |
+            microservices/service-registry/build/reports/tests/
+            microservices/service-registry/build/test-results/
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-logs
+          path: microservices/service-registry/build/reports/tests/test.log
+
+      - name: Process test results
+        if: always()
+        uses: mikepenz/action-junit-report@v3
+        with:
+          report_paths: '**/build/test-results/test/TEST-*.xml'
+          check_name: 'Service Registry Test Results'
+          fail_on_failure: true
+
+      - name: Cleanup Gradle Cache
+        if: always()
+        run: |
+          rm -f ~/.gradle/caches/modules-2/modules-2.lock
+          rm -f ~/.gradle/caches/modules-2/gc.properties
+
+env:
+  GRADLE_OPTS: >-
+    -Dorg.gradle.daemon=false
+    -Dorg.gradle.parallel=true
+    -Dorg.gradle.workers.max=2
+    -Dorg.gradle.configureondemand=true
+    -Dkotlin.incremental=false
+    -Dkotlin.compiler.effectSystemEnabled=false

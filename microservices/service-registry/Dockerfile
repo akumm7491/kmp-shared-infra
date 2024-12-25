@@ -1,8 +1,11 @@
 FROM gradle:8.5-jdk17 as builder
 
 WORKDIR /home/gradle/src
+
+# Copy the entire project
 COPY . .
 
+# Build the service
 RUN gradle microservices:service-registry:buildFatJar --no-daemon
 
 FROM openjdk:17-slim

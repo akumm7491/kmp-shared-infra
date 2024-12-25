@@ -1,5 +1,4 @@
 plugins {
-    kotlin("jvm") version "1.9.20" apply false
     id("io.ktor.plugin") version "2.3.6" apply false
 }
 
@@ -14,6 +13,10 @@ allprojects {
 
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
+    
+    configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
+        jvmToolchain(17)
+    }
     
     dependencies {
         "implementation"("org.jetbrains.kotlin:kotlin-stdlib")
