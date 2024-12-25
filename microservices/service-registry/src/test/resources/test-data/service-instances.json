@@ -1,0 +1,62 @@
+[
+  {
+    "id": "order-service-1",
+    "name": "order-service",
+    "host": "localhost",
+    "port": 8081,
+    "status": "UP",
+    "metadata": {
+      "version": "1.0.0",
+      "zone": "us-east-1",
+      "environment": "test"
+    }
+  },
+  {
+    "id": "payment-service-1",
+    "name": "payment-service",
+    "host": "localhost",
+    "port": 8082,
+    "status": "UP",
+    "metadata": {
+      "version": "1.0.0",
+      "zone": "us-east-1",
+      "environment": "test"
+    }
+  },
+  {
+    "id": "product-service-1",
+    "name": "product-service",
+    "host": "localhost",
+    "port": 8083,
+    "status": "UP",
+    "metadata": {
+      "version": "1.0.0",
+      "zone": "us-east-1",
+      "environment": "test"
+    }
+  },
+  {
+    "id": "order-service-2",
+    "name": "order-service",
+    "host": "localhost",
+    "port": 8084,
+    "status": "DOWN",
+    "metadata": {
+      "version": "1.0.0",
+      "zone": "us-east-1",
+      "environment": "test"
+    }
+  },
+  {
+    "id": "payment-service-2",
+    "name": "payment-service",
+    "host": "localhost",
+    "port": 8085,
+    "status": "STARTING",
+    "metadata": {
+      "version": "1.0.0",
+      "zone": "us-east-1",
+      "environment": "test"
+    }
+  }
+]

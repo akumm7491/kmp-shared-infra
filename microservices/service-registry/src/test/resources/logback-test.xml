@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Console appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="ch.qos.logback.contrib.json.classic.JsonLayout">
+                <timestampFormat>yyyy-MM-dd'T'HH:mm:ss.SSSX</timestampFormat>
+                <timestampFormatTimezoneId>UTC</timestampFormatTimezoneId>
+                <appendLineSeparator>true</appendLineSeparator>
+                <jsonFormatter class="ch.qos.logback.contrib.jackson.JacksonJsonFormatter">
+                    <prettyPrint>false</prettyPrint>
+                </jsonFormatter>
+            </layout>
+        </encoder>
+    </appender>
+
+    <!-- File appender for test reports -->
+    <appender name="TEST_REPORT" class="ch.qos.logback.core.FileAppender">
+        <file>build/reports/tests/test.log</file>
+        <append>false</append>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="ch.qos.logback.contrib.json.classic.JsonLayout">
+                <timestampFormat>yyyy-MM-dd'T'HH:mm:ss.SSSX</timestampFormat>
+                <timestampFormatTimezoneId>UTC</timestampFormatTimezoneId>
+                <appendLineSeparator>true</appendLineSeparator>
+                <jsonFormatter class="ch.qos.logback.contrib.jackson.JacksonJsonFormatter">
+                    <prettyPrint>true</prettyPrint>
+                </jsonFormatter>
+            </layout>
+        </encoder>
+    </appender>
+
+    <!-- Async appender for improved performance -->
+    <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <appender-ref ref="CONSOLE" />
+    </appender>
+
+    <!-- Logger configurations -->
+    
+    <!-- Test infrastructure -->
+    <logger name="com.example.kmp.testing" level="DEBUG" />
+    <logger name="com.example.kmp.service.registry.test" level="DEBUG" />
+    
+    <!-- Service registry -->
+    <logger name="com.example.kmp.service.registry" level="DEBUG" />
+    
+    <!-- Eureka client -->
+    <logger name="com.netflix.discovery" level="DEBUG" />
+    <logger name="com.netflix.eureka" level="DEBUG" />
+    <logger name="com.netflix.config" level="DEBUG" />
+    
+    <!-- Ktor -->
+    <logger name="io.ktor" level="INFO" />
+    <logger name="io.ktor.server.testing" level="DEBUG" />
+    
+    <!-- Test frameworks -->
+    <logger name="org.junit" level="INFO" />
+    <logger name="org.junit.platform" level="INFO" />
+    
+    <!-- Third-party libraries -->
+    <logger name="com.netflix" level="INFO" />
+    <logger name="io.netty" level="INFO" />
+    <logger name="org.apache" level="INFO" />
+    
+    <!-- Root logger -->
+    <root level="INFO">
+        <appender-ref ref="ASYNC" />
+        <appender-ref ref="TEST_REPORT" />
+    </root>
+
+    <!-- Shutdown hook to ensure all logs are flushed -->
+    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook">
+        <delay>1000</delay>
+    </shutdownHook>
+
+    <!-- Test context listener -->
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+        <resetJUL>true</resetJUL>
+    </contextListener>
+</configuration>

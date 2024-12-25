@@ -1,0 +1,66 @@
+{
+  "missing_required": {
+    "app": "",
+    "instanceId": "",
+    "hostName": "",
+    "ipAddress": "",
+    "port": 0,
+    "status": "UNKNOWN",
+    "metadata": {},
+    "healthCheckUrl": "",
+    "statusPageUrl": "",
+    "homePageUrl": ""
+  },
+  "invalid_format": {
+    "app": "test-service",
+    "instanceId": "test-1",
+    "hostName": "invalid hostname!@#",
+    "ipAddress": "not.an.ip.address",
+    "port": -1,
+    "status": "UP",
+    "metadata": {},
+    "healthCheckUrl": "http://localhost:8080/health",
+    "statusPageUrl": "http://localhost:8080/status",
+    "homePageUrl": "http://localhost:8080"
+  },
+  "invalid_length": {
+    "app": "test-service-with-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-long-name",
+    "instanceId": "test-instance-with-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-long-id",
+    "hostName": "localhost",
+    "ipAddress": "127.0.0.1",
+    "port": 8080,
+    "status": "UP",
+    "metadata": {},
+    "healthCheckUrl": "http://localhost:8080/health",
+    "statusPageUrl": "http://localhost:8080/status",
+    "homePageUrl": "http://localhost:8080"
+  },
+  "invalid_urls": {
+    "app": "test-service",
+    "instanceId": "test-1",
+    "hostName": "localhost",
+    "ipAddress": "127.0.0.1",
+    "port": 8080,
+    "status": "UP",
+    "metadata": {},
+    "healthCheckUrl": "not a url",
+    "statusPageUrl": "also not a url",
+    "homePageUrl": "still not a url"
+  },
+  "invalid_metadata": {
+    "app": "test-service",
+    "instanceId": "test-1",
+    "hostName": "localhost",
+    "ipAddress": "127.0.0.1",
+    "port": 8080,
+    "status": "UP",
+    "metadata": {
+      "key-with-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-long-name": "value",
+      "invalid!@#key": "value",
+      "empty": ""
+    },
+    "healthCheckUrl": "http://localhost:8080/health",
+    "statusPageUrl": "http://localhost:8080/status",
+    "homePageUrl": "http://localhost:8080"
+  }
+}

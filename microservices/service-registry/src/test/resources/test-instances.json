@@ -1,0 +1,36 @@
+[
+  {
+    "app": "test-service",
+    "instanceId": "test-1",
+    "hostName": "localhost",
+    "ipAddress": "127.0.0.1",
+    "port": 8080,
+    "status": "UP",
+    "metadata": {
+      "version": "1.0.0",
+      "environment": "test",
+      "region": "us-east-1",
+      "zone": "us-east-1a"
+    },
+    "healthCheckUrl": "http://localhost:8080/health",
+    "statusPageUrl": "http://localhost:8080/status",
+    "homePageUrl": "http://localhost:8080"
+  },
+  {
+    "app": "test-service",
+    "instanceId": "test-2",
+    "hostName": "localhost",
+    "ipAddress": "127.0.0.1",
+    "port": 8081,
+    "status": "UP",
+    "metadata": {
+      "version": "1.0.0",
+      "environment": "test",
+      "region": "us-east-1",
+      "zone": "us-east-1b"
+    },
+    "healthCheckUrl": "http://localhost:8081/health",
+    "statusPageUrl": "http://localhost:8081/status",
+    "homePageUrl": "http://localhost:8081"
+  }
+]

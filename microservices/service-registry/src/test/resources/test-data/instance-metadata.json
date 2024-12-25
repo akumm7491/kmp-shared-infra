@@ -1,0 +1,125 @@
+{
+  "order-service-1": {
+    "version": "1.0.0",
+    "zone": "us-east-1",
+    "environment": "test",
+    "healthCheck": "/health",
+    "metrics": "/metrics",
+    "docs": "/swagger-ui.html",
+    "team": "orders",
+    "contact": "orders-team@example.com",
+    "features": {
+      "async": true,
+      "retry": true,
+      "circuitBreaker": true
+    },
+    "dependencies": {
+      "payment-service": "1.0.0",
+      "product-service": "1.0.0"
+    },
+    "limits": {
+      "maxConcurrentRequests": 100,
+      "requestTimeout": 5000,
+      "rateLimitPerSecond": 50
+    }
+  },
+  "payment-service-1": {
+    "version": "1.0.0",
+    "zone": "us-east-1",
+    "environment": "test",
+    "healthCheck": "/health",
+    "metrics": "/metrics",
+    "docs": "/swagger-ui.html",
+    "team": "payments",
+    "contact": "payments-team@example.com",
+    "features": {
+      "async": true,
+      "retry": true,
+      "encryption": true
+    },
+    "security": {
+      "encryption": "AES-256",
+      "tlsVersion": "1.3",
+      "authType": "JWT"
+    },
+    "limits": {
+      "maxConcurrentRequests": 50,
+      "requestTimeout": 3000,
+      "rateLimitPerSecond": 20
+    }
+  },
+  "product-service-1": {
+    "version": "1.0.0",
+    "zone": "us-east-1",
+    "environment": "test",
+    "healthCheck": "/health",
+    "metrics": "/metrics",
+    "docs": "/swagger-ui.html",
+    "team": "products",
+    "contact": "products-team@example.com",
+    "features": {
+      "caching": true,
+      "search": true,
+      "filtering": true
+    },
+    "cache": {
+      "type": "redis",
+      "ttl": 3600,
+      "maxSize": "1GB"
+    },
+    "limits": {
+      "maxConcurrentRequests": 200,
+      "requestTimeout": 2000,
+      "rateLimitPerSecond": 100
+    }
+  },
+  "order-service-2": {
+    "version": "1.0.0",
+    "zone": "us-east-1",
+    "environment": "test",
+    "healthCheck": "/health",
+    "metrics": "/metrics",
+    "docs": "/swagger-ui.html",
+    "team": "orders",
+    "contact": "orders-team@example.com",
+    "features": {
+      "async": true,
+      "retry": true,
+      "circuitBreaker": true
+    },
+    "dependencies": {
+      "payment-service": "1.0.0",
+      "product-service": "1.0.0"
+    },
+    "limits": {
+      "maxConcurrentRequests": 100,
+      "requestTimeout": 5000,
+      "rateLimitPerSecond": 50
+    }
+  },
+  "payment-service-2": {
+    "version": "1.0.0",
+    "zone": "us-east-1",
+    "environment": "test",
+    "healthCheck": "/health",
+    "metrics": "/metrics",
+    "docs": "/swagger-ui.html",
+    "team": "payments",
+    "contact": "payments-team@example.com",
+    "features": {
+      "async": true,
+      "retry": true,
+      "encryption": true
+    },
+    "security": {
+      "encryption": "AES-256",
+      "tlsVersion": "1.3",
+      "authType": "JWT"
+    },
+    "limits": {
+      "maxConcurrentRequests": 50,
+      "requestTimeout": 3000,
+      "rateLimitPerSecond": 20
+    }
+  }
+}

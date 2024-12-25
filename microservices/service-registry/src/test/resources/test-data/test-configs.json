@@ -1,0 +1,168 @@
+{
+  "test.environment": {
+    "name": "test",
+    "zone": "us-east-1",
+    "datacenter": "local",
+    "logging": {
+      "level": "DEBUG",
+      "format": "json",
+      "metrics": true,
+      "tracing": true
+    },
+    "monitoring": {
+      "enabled": true,
+      "interval": 30,
+      "exporters": ["prometheus", "jaeger"]
+    }
+  },
+  "eureka.client": {
+    "registerWithEureka": false,
+    "fetchRegistry": false,
+    "serviceUrl": "http://localhost:8761/eureka/",
+    "preferSameZone": true,
+    "shouldUseDns": false,
+    "validateInstanceId": false,
+    "healthcheck": {
+      "enabled": true,
+      "interval": 30,
+      "timeout": 5
+    },
+    "transport": {
+      "connectTimeout": 5,
+      "readTimeout": 8,
+      "maxConnections": 200,
+      "maxConnectionsPerHost": 50,
+      "retryCount": 3,
+      "retryDelay": 1000
+    }
+  },
+  "test.timeouts": {
+    "registration": {
+      "initial": 5000,
+      "retry": 1000,
+      "max": 30000
+    },
+    "deregistration": {
+      "initial": 3000,
+      "retry": 1000,
+      "max": 15000
+    },
+    "heartbeat": {
+      "interval": 30000,
+      "timeout": 5000,
+      "missedThreshold": 3
+    },
+    "cache": {
+      "refresh": 30000,
+      "expiry": 180000,
+      "cleanup": 300000
+    }
+  },
+  "test.services": {
+    "order": {
+      "name": "order-service",
+      "instances": 2,
+      "ports": [8081, 8084],
+      "healthcheck": {
+        "path": "/health",
+        "interval": 30,
+        "timeout": 5
+      },
+      "scaling": {
+        "minInstances": 1,
+        "maxInstances": 5,
+        "cooldown": 300
+      }
+    },
+    "payment": {
+      "name": "payment-service",
+      "instances": 2,
+      "ports": [8082, 8085],
+      "healthcheck": {
+        "path": "/health",
+        "interval": 30,
+        "timeout": 5
+      },
+      "scaling": {
+        "minInstances": 1,
+        "maxInstances": 3,
+        "cooldown": 300
+      }
+    },
+    "product": {
+      "name": "product-service",
+      "instances": 1,
+      "ports": [8083],
+      "healthcheck": {
+        "path": "/health",
+        "interval": 30,
+        "timeout": 5
+      },
+      "scaling": {
+        "minInstances": 1,
+        "maxInstances": 3,
+        "cooldown": 300
+      }
+    }
+  },
+  "test.scenarios": {
+    "registration": {
+      "enabled": true,
+      "retryAttempts": 3,
+      "retryDelay": 1000,
+      "validation": {
+        "enabled": true,
+        "rules": ["id", "name", "host", "port", "status"]
+      },
+      "cleanup": {
+        "enabled": true,
+        "delay": 5000
+      }
+    },
+    "discovery": {
+      "enabled": true,
+      "cacheEnabled": true,
+      "refreshInterval": 30000,
+      "filters": {
+        "enabled": true,
+        "types": ["status", "zone", "version"]
+      },
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "round-robin",
+        "healthcheck": true
+      }
+    },
+    "healthCheck": {
+      "enabled": true,
+      "interval": 30000,
+      "timeout": 5000,
+      "thresholds": {
+        "healthy": 1,
+        "unhealthy": 3
+      },
+      "actions": {
+        "onUnhealthy": "deregister",
+        "onRecovery": "register"
+      }
+    },
+    "performance": {
+      "enabled": true,
+      "concurrent": {
+        "users": 50,
+        "rampUp": 30,
+        "duration": 300
+      },
+      "thresholds": {
+        "responseTime": 200,
+        "errorRate": 1.0,
+        "throughput": 1000
+      },
+      "monitoring": {
+        "enabled": true,
+        "metrics": ["cpu", "memory", "network"],
+        "interval": 15
+      }
+    }
+  }
+}
