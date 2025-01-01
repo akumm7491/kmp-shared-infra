@@ -31,16 +31,20 @@ object AppConfig {
     object Storage {
         const val REQUESTS_STORE = "demo-requests"
         const val RESPONSES_STORE = "demo-responses"
+        val CONNECTION_STRING = System.getenv("MONGODB_CONNECTION_STRING") ?: "mongodb://localhost:27017"
     }
     
     object Messaging {
         const val DEMO_EVENTS_TOPIC = "demo.events"
         val KAFKA_SERVERS = System.getenv("KAFKA_BOOTSTRAP_SERVERS") ?: "kafka:29092"
         val SCHEMA_REGISTRY = System.getenv("SCHEMA_REGISTRY_URL") ?: "http://schema-registry:8081"
+        val BROKER_URL = KAFKA_SERVERS
     }
     
     object Auth {
         const val JWT_ISSUER = "kmp-auth"
         const val JWT_AUDIENCE = "kmp-services"
+        val SERVER_URL = System.getenv("AUTH_SERVER_URL") ?: "http://auth-service:8081"
+        val CLIENT_SECRET = System.getenv("AUTH_CLIENT_SECRET") ?: "dev-secret"
     }
 } 

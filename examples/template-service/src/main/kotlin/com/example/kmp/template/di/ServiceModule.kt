@@ -21,22 +21,22 @@ val serviceModule = module {
     single { 
         StorageFactory.createStorageProvider(StorageConfig(
             type = StorageType.DATABASE,
-            connectionString = "localhost:27017"
+            connectionString = AppConfig.Storage.CONNECTION_STRING
         ))
     }
     
     single {
         MessagingFactory.createMessageBroker(MessagingConfig(
-            brokerUrl = "localhost:9092",
+            brokerUrl = AppConfig.Messaging.BROKER_URL,
             clientId = AppConfig.SERVICE_NAME
         ))
     }
     
     single {
         AuthFactory.createAuthProvider(AuthConfig(
-            authServerUrl = "http://localhost:8081",
+            authServerUrl = AppConfig.Auth.SERVER_URL,
             clientId = AppConfig.SERVICE_NAME,
-            clientSecret = "secret",
+            clientSecret = AppConfig.Auth.CLIENT_SECRET,
             authMethods = setOf(AuthMethod.JWT)
         ))
     }

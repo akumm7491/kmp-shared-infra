@@ -6,6 +6,10 @@ import com.example.kmp.networking.configureServiceDiscovery
 import com.example.kmp.template.config.AppConfig
 import com.example.kmp.template.di.serviceModule
 import com.example.kmp.template.routes.configureApiRoutes
+import com.example.kmp.storage.KtorStorageFactory
+import com.example.kmp.auth.KtorAuthFactory
+import com.example.kmp.messaging.KtorMessagingFactory
+import com.example.kmp.validation.ValidationService
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -16,7 +20,15 @@ import org.koin.core.logger.Level
 import org.koin.ktor.plugin.Koin
 import org.koin.logger.SLF4JLogger
 
+// Initialize factories at the file level
+private val validationService = ValidationService()
+
 fun main() {
+    // Initialize infrastructure factories
+    KtorStorageFactory.initialize()
+    KtorAuthFactory.initialize()
+    KtorMessagingFactory.initialize()
+    
     embeddedServer(
         Netty,
         port = AppConfig.PORT,
