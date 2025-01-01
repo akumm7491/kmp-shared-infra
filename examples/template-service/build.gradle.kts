@@ -18,6 +18,7 @@ dependencies {
     implementation(project(":common-libs:auth-module"))
     implementation(project(":common-libs:networking-module"))
     implementation(project(":common-libs:validation-module"))
+    implementation(project(":common-libs:di-module"))
     
     // Koin
     implementation(libs.koin.core)

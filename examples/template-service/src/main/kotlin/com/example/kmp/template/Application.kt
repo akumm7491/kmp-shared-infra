@@ -1,34 +1,16 @@
 package com.example.kmp.template
 
-import com.example.kmp.monitoring.configureMonitoring
-import com.example.kmp.networking.configureNetworking
-import com.example.kmp.networking.configureServiceDiscovery
 import com.example.kmp.template.config.AppConfig
 import com.example.kmp.template.di.serviceModule
 import com.example.kmp.template.routes.configureApiRoutes
-import com.example.kmp.storage.KtorStorageFactory
-import com.example.kmp.auth.KtorAuthFactory
-import com.example.kmp.messaging.KtorMessagingFactory
-import com.example.kmp.validation.ValidationService
-import io.ktor.serialization.kotlinx.json.*
+import com.example.kmp.di.configureInfrastructure
+import com.example.kmp.di.InfrastructureConfig
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.routing.*
-import org.koin.core.logger.Level
-import org.koin.ktor.plugin.Koin
-import org.koin.logger.SLF4JLogger
-
-// Initialize factories at the file level
-private val validationService = ValidationService()
 
 fun main() {
-    // Initialize infrastructure factories
-    KtorStorageFactory.initialize()
-    KtorAuthFactory.initialize()
-    KtorMessagingFactory.initialize()
-    
     embeddedServer(
         Netty,
         port = AppConfig.PORT,
@@ -37,26 +19,23 @@ fun main() {
 }
 
 fun Application.templateModule() {
-    // Configure content negotiation
-    install(ContentNegotiation) {
-        json(kotlinx.serialization.json.Json {
-            ignoreUnknownKeys = true
-            encodeDefaults = true
-            isLenient = true
-            allowSpecialFloatingPointValues = true
-        })
-    }
-
-    // Install Koin for dependency injection
-    install(Koin) {
-        SLF4JLogger(Level.INFO)
-        modules(serviceModule)
-    }
-
-    // Configure shared infrastructure components
-    configureMonitoring()
-    configureNetworking()
-    configureServiceDiscovery(AppConfig.Registry.serviceConfig)
+    // Configure infrastructure with our service-specific config
+    configureInfrastructure(
+        serviceName = AppConfig.SERVICE_NAME,
+        config = InfrastructureConfig(
+            storage = InfrastructureConfig.StorageConfig(
+                connectionString = AppConfig.Storage.CONNECTION_STRING
+            ),
+            messaging = InfrastructureConfig.MessagingConfig(
+                brokerUrl = AppConfig.Messaging.BROKER_URL
+            ),
+            auth = InfrastructureConfig.AuthConfig(
+                serverUrl = AppConfig.Auth.SERVER_URL,
+                clientSecret = AppConfig.Auth.CLIENT_SECRET
+            )
+        ),
+        extraModules = listOf(serviceModule)
+    )
 
     // Configure API routes
     routing {

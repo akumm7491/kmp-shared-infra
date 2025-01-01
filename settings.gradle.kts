@@ -16,6 +16,7 @@ include(":common-libs:storage-module")
 include(":common-libs:testing-module")
 include(":common-libs:validation-module")
 include(":common-libs:services-module")
+include(":common-libs:di-module")
 
 // Core infrastructure services
 include(":microservices:api-gateway")
