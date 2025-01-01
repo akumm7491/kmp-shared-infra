@@ -11,8 +11,8 @@ object WeatherConfig {
     val serviceConfig = ServiceConfig(
         serviceName = serviceName,
         serviceUrl = "http://${System.getenv("HOST") ?: "weather-service"}:$port",
-        registryUrl = System.getenv("REGISTRY_URL") ?: "http://localhost:8761/eureka",
-        configServerUrl = System.getenv("CONFIG_SERVER_URL") ?: "http://localhost:8888",
+        registryUrl = System.getenv("REGISTRY_URL") ?: "http://service-registry:8761",
+        configServerUrl = System.getenv("CONFIG_SERVER_URL") ?: "http://config-server:8888",
         instanceId = "${System.getenv("HOST") ?: "weather-service"}:$serviceName:$port",
         vipAddress = serviceName,
         secureVipAddress = serviceName
@@ -25,8 +25,8 @@ object WeatherConfig {
     val consumerServiceConfig = ServiceConfig(
         serviceName = consumerServiceName,
         serviceUrl = "http://${System.getenv("HOST") ?: "weather-consumer"}:$consumerPort",
-        registryUrl = System.getenv("REGISTRY_URL") ?: "http://localhost:8761/eureka",
-        configServerUrl = System.getenv("CONFIG_SERVER_URL") ?: "http://localhost:8888",
+        registryUrl = System.getenv("REGISTRY_URL") ?: "http://service-registry:8761",
+        configServerUrl = System.getenv("CONFIG_SERVER_URL") ?: "http://config-server:8888",
         instanceId = "${System.getenv("HOST") ?: "weather-consumer"}:$consumerServiceName:$consumerPort",
         vipAddress = consumerServiceName,
         secureVipAddress = consumerServiceName

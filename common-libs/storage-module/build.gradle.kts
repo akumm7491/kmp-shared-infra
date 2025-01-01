@@ -15,15 +15,15 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(libs.kotlin.stdlib)
-                implementation(libs.kotlinx.coroutines)
-                implementation(libs.kotlinx.serialization.json)
+                api(libs.kotlin.stdlib)
+                api(libs.kotlinx.coroutines)
+                api(libs.kotlinx.serialization.json)
                 
-                // Database
-                implementation(libs.exposed.core)
-                implementation(libs.exposed.dao)
-                implementation(libs.exposed.jdbc)
-                implementation(libs.hikaricp)
+                // Core database dependencies that services need
+                api(libs.exposed.core)
+                api(libs.exposed.dao)
+                api(libs.exposed.jdbc)
+                api(libs.hikaricp)
             }
         }
         
@@ -38,7 +38,10 @@ kotlin {
         
         val jvmMain by getting {
             dependencies {
-                implementation(libs.slf4j.api)
+                // Core logging that services need
+                api(libs.slf4j.api)
+                
+                // Internal dependencies
                 implementation(libs.logback)
             }
         }

@@ -12,9 +12,9 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(libs.kotlin.stdlib)
-                implementation(libs.kotlinx.coroutines)
-                implementation(libs.kotlinx.serialization.json)
+                api(libs.kotlin.stdlib)
+                api(libs.kotlinx.coroutines)
+                api(libs.kotlinx.serialization.json)
             }
         }
 
@@ -22,16 +22,19 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(kotlin("test-junit5"))
-                api(project(":common-libs:testing-module"))
+                implementation(project(":common-libs:testing-module"))
             }
         }
         
         val jvmMain by getting {
             dependencies {
+                // Core auth dependencies that services need
+                api(libs.ktor.server.auth)
+                api(libs.ktor.server.auth.jwt)
+                api(libs.ktor.server.sessions)
+                
+                // Internal dependencies
                 implementation(libs.ktor.server.core)
-                implementation(libs.ktor.server.auth)
-                implementation(libs.ktor.server.auth.jwt)
-                implementation(libs.ktor.server.sessions)
                 implementation(libs.logback)
             }
         }

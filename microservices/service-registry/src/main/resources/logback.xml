@@ -1,16 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
+    <!-- Include common configuration from monitoring module -->
+    <include resource="com/example/kmp/monitoring/logback-common.xml"/>
 
-    <logger name="com.example.kmp" level="INFO"/>
-    <logger name="io.netty" level="WARN"/>
-    <logger name="ktor" level="INFO"/>
-
-    <root level="INFO">
-        <appender-ref ref="STDOUT"/>
-    </root>
+    <!-- Service Registry specific loggers -->
+    <logger name="com.netflix.eureka" level="INFO"/>
+    <logger name="com.netflix.discovery" level="INFO"/>
+    <logger name="com.example.kmp.service.registry" level="DEBUG"/>
 </configuration> 

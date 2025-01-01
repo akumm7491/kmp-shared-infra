@@ -33,7 +33,7 @@ abstract class RestApiService(
         }
     }
 
-    override fun Application.configureCustomService() {
+    override fun Application.configureService() {
         routing {
             // API versioning support
             route("/api") {
@@ -68,7 +68,7 @@ abstract class EventProcessorService(
         }
     }
 
-    override fun Application.configureCustomService() {
+    override fun Application.configureService() {
         configureEventHandlers()
     }
 
@@ -99,7 +99,7 @@ abstract class DataService(
         }
     }
 
-    override fun Application.configureCustomService() {
+    override fun Application.configureService() {
         routing {
             route("/data") {
                 configureDataRoutes()
@@ -136,7 +136,7 @@ abstract class IntegrationService(
         }
     }
 
-    override fun Application.configureCustomService() {
+    override fun Application.configureService() {
         configureIntegrations()
     }
 

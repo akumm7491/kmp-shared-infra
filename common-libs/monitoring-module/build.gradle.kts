@@ -15,13 +15,13 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(libs.kotlin.stdlib)
-                implementation(libs.kotlinx.coroutines)
-                implementation(libs.kotlinx.serialization.json)
+                api(libs.kotlin.stdlib)
+                api(libs.kotlinx.coroutines)
+                api(libs.kotlinx.serialization.json)
                 
-                // Metrics
-                implementation(libs.micrometer.core)
-                implementation(libs.micrometer.prometheus)
+                // Core metrics dependencies that services need
+                api(libs.micrometer.core)
+                api(libs.micrometer.prometheus)
             }
         }
         
@@ -36,16 +36,17 @@ kotlin {
         
         val jvmMain by getting {
             dependencies {
-                implementation(libs.slf4j.api)
-                implementation(libs.logback)
+                // Core monitoring dependencies that services need
+                api(libs.ktor.server.call.logging)
+                api(libs.ktor.server.call.id)
+                api(libs.micrometer.ktor)
+                api(libs.slf4j.api)
                 
-                // Ktor Server Dependencies
+                // Internal dependencies
+                implementation(libs.logback)
                 implementation(libs.ktor.server.core)
                 implementation(libs.ktor.server.content.negotiation)
-                implementation(libs.ktor.server.call.logging)
                 implementation(libs.ktor.server.status.pages)
-                implementation(libs.ktor.server.call.id)
-                implementation(libs.micrometer.ktor)
             }
         }
         

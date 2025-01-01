@@ -21,8 +21,9 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 // Core validation dependencies
-                implementation(libs.jakarta.validation.api)
-                implementation(libs.hibernate.validator)
+                api(libs.jakarta.validation.api)
+                api(libs.hibernate.validator)
+                api(libs.glassfish.el)  // Required for EL implementation
                 
                 // Ktor integration
                 implementation(libs.ktor.server.core)

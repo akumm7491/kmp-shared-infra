@@ -12,18 +12,18 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(libs.kotlin.stdlib)
-                implementation(libs.kotlinx.coroutines)
-                implementation(libs.ktor.serialization.json)
+                api(libs.kotlin.stdlib)
+                api(libs.kotlinx.coroutines)
+                api(libs.ktor.serialization.json)
             }
         }
         
         val jvmMain by getting {
             dependencies {
                 // Core Ktor dependencies for service setup
-                implementation(libs.ktor.server.core)
-                implementation(libs.ktor.server.netty)
-                implementation(libs.ktor.server.content.negotiation)
+                api(libs.ktor.server.core)
+                api(libs.ktor.server.netty)
+                api(libs.ktor.server.content.negotiation)
                 
                 // Common modules - our main dependencies
                 api(project(":common-libs:auth-module"))      // Authentication and authorization

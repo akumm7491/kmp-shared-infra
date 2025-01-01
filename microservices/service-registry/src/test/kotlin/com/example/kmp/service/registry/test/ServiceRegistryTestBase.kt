@@ -17,6 +17,7 @@ import kotlinx.serialization.modules.SerializersModule
 import io.ktor.server.routing.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInfo
+import com.example.kmp.service.registry.routes.registerServiceEndpoints
 
 @OptIn(ExperimentalSerializationApi::class)
 abstract class ServiceRegistryTestBase : KMPServiceTestBase() {
@@ -50,15 +51,6 @@ abstract class ServiceRegistryTestBase : KMPServiceTestBase() {
         val testPort = findAvailablePort()
         System.setProperty("ktor.deployment.port", testPort.toString())
         System.setProperty("ktor.deployment.host", "127.0.0.1")
-        
-        // Configure Eureka test properties
-        System.setProperty("eureka.client.register-with-eureka", "false")
-        System.setProperty("eureka.client.fetch-registry", "false")
-        System.setProperty("eureka.client.serviceUrl.defaultZone", "http://localhost:$testPort/eureka/")
-        System.setProperty("eureka.server.enable-self-preservation", "false")
-        System.setProperty("eureka.server.eviction-interval-timer-in-ms", "1000")
-        System.setProperty("eureka.server.response-cache-update-interval-ms", "1000")
-        System.setProperty("eureka.server.response-cache-auto-expiration-in-seconds", "10")
     }
 
     override fun cleanupTestEnvironment() {
@@ -88,8 +80,7 @@ abstract class ServiceRegistryTestBase : KMPServiceTestBase() {
         
         routing {
             serviceRegistry.apply {
-                registerServiceEndpoints()
-                registerEurekaEndpoints()
+                registerServiceEndpoints(this)
             }
         }
     }

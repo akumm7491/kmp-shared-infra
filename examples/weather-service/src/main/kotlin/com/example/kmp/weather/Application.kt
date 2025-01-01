@@ -34,9 +34,6 @@ fun main() {
 }
 
 fun Application.weatherModule() {
-    // Configure service discovery first to ensure proper registration
-    configureServiceDiscovery(WeatherConfig.serviceConfig)
-
     // Configure content negotiation with consistent JSON settings
     install(ContentNegotiation) {
         json(kotlinx.serialization.json.Json {
@@ -50,6 +47,7 @@ fun Application.weatherModule() {
     // Configure shared infrastructure components
     configureMonitoring()
     configureNetworking()
+    configureServiceDiscovery(WeatherConfig.serviceConfig)
 
     // Initialize services
     val weatherService = WeatherService()

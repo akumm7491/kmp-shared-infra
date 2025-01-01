@@ -15,44 +15,45 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(libs.kotlin.stdlib)
-                implementation(libs.kotlinx.coroutines)
-                implementation(libs.ktor.serialization)
-                implementation(libs.ktor.serialization.json)
-                implementation(libs.koin.core)
+                api(libs.kotlin.stdlib)
+                api(libs.kotlinx.coroutines)
+                api(libs.ktor.serialization)
+                api(libs.ktor.serialization.json)
+                api(libs.koin.core)
             }
         }
         
         val jvmMain by getting {
             dependencies {
-                // Ktor Client
-                implementation(libs.ktor.client.core)
-                implementation(libs.ktor.client.cio)
-                implementation(libs.ktor.client.okhttp)
-                implementation(libs.ktor.client.content.negotiation)
-                implementation(libs.ktor.client.logging)
+                // Core HTTP client dependencies that services need
+                api(libs.ktor.client.core)
+                api(libs.ktor.client.cio)
+                api(libs.ktor.client.content.negotiation)
+                api(libs.ktor.client.logging)
                 
-                // Ktor Server
-                implementation(libs.ktor.server.core)
-                implementation(libs.ktor.server.netty)
-                implementation(libs.ktor.server.content.negotiation)
+                // Core HTTP server dependencies that services need
+                api(libs.ktor.server.core)
+                api(libs.ktor.server.netty)
+                api(libs.ktor.server.content.negotiation)
+                api(libs.ktor.server.cors)
+                
+                // Core service discovery that services need
+                api(libs.netflix.eureka.client)
+                api(libs.typesafe.config)
+                
+                // Core DI dependencies that services need
+                api(libs.koin.ktor)
+                api(libs.koin.logger)
+                
+                // Internal dependencies
+                implementation(libs.ktor.client.okhttp)  // Alternative HTTP client
                 implementation(libs.ktor.server.call.logging)
                 implementation(libs.ktor.server.status.pages)
-                implementation(libs.ktor.server.cors)
-                
-                // Koin
-                implementation(libs.koin.ktor)
-                implementation(libs.koin.logger)
-                
-                // Service Discovery
-                implementation(libs.netflix.eureka.client)
                 implementation(libs.netflix.eureka.core)
-                implementation(libs.typesafe.config)
-                
                 implementation(libs.logback)
                 
                 // Project dependencies
-                implementation(project(":common-libs:monitoring-module"))
+                api(project(":common-libs:monitoring-module"))
             }
         }
         

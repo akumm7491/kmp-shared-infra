@@ -17,6 +17,7 @@ import com.example.kmp.auth.*
 import com.example.kmp.messaging.*
 import com.example.kmp.storage.*
 import kotlinx.serialization.json.Json
+import com.example.kmp.services.events.HealthStatus
 
 /**
  * Core abstraction for KMP microservices that provides a standardized way to configure
@@ -29,18 +30,19 @@ abstract class KMPService(
     private val isServiceRegistry: Boolean = false
 ) {
     private val config = KMPServiceConfiguration().apply(configuration)
-    protected lateinit var logger: LogProvider
+    
+    protected var logger: LogProvider = KtorMonitoringFactory.createLogProvider("$projectId-$serviceName-init")
     protected var authProvider: AuthProvider? = null
     protected var messageBroker: MessageBroker? = null
     protected var storageProvider: StorageProvider? = null
     
     fun start(port: Int = 8080) {
         embeddedServer(Netty, port = port) {
-            configureService()
+            configureApplication()
         }.start(wait = true)
     }
 
-    private fun Application.configureService() {
+    protected fun Application.configureApplication() {
         // Initialize core infrastructure using Ktor-specific factory
         logger = KtorMonitoringFactory.createLogProvider("$projectId-$serviceName")
         val metricsProvider = KtorMonitoringFactory.createMetricsProvider() as KtorMetricsProvider
@@ -51,6 +53,8 @@ abstract class KMPService(
                 ignoreUnknownKeys = true
                 isLenient = true
                 prettyPrint = true
+                encodeDefaults = true
+                useArrayPolymorphism = true
             })
         }
 
@@ -61,7 +65,7 @@ abstract class KMPService(
         if (isServiceRegistry) {
             configureServiceRegistry(ServiceRegistryConfig(
                 port = environment.config.port,
-                enableSelfPreservation = false, // Disabled for development
+                enableSelfPreservation = false,
                 renewalPercentThreshold = 0.85
             ))
         } else if (config.serviceDiscovery) {
@@ -103,19 +107,27 @@ abstract class KMPService(
             ))
         }
 
-        // Set up standard endpoints
-        routing {
+        // Configure all routing in a single block
+        install(Routing) {
+            // Core endpoints (must be registered first)
             get("/health") {
-                call.respond(mapOf(
-                    "status" to "UP",
+                logger.info("Health check requested", mapOf(
                     "service" to "$projectId-$serviceName",
-                    "timestamp" to System.currentTimeMillis()
+                    "status" to "UP"
+                ))
+                call.respond(HttpStatusCode.OK, HealthStatus(
+                    status = "UP",
+                    service = "$projectId-$serviceName",
+                    timestamp = System.currentTimeMillis()
                 ))
             }
 
             get("/metrics") {
                 call.respond(metricsProvider.getMetrics())
             }
+
+            // Service-specific routes
+            configureRoutes()
         }
 
         // Log service startup
@@ -127,14 +139,21 @@ abstract class KMPService(
             ))
         }
 
-        // Configure custom service logic
-        configureCustomService()
+        // Configure service-specific logic
+        configureService()
     }
 
     /**
-     * Override this function to configure custom service-specific logic
+     * Override this function to configure service-specific logic
      */
-    abstract fun Application.configureCustomService()
+    abstract fun Application.configureService()
+
+    /**
+     * Override this function to configure service routes
+     */
+    protected open fun Routing.configureRoutes() {
+        // Default empty implementation
+    }
 
     /**
      * Helper function for services to access logger

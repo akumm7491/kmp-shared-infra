@@ -4,62 +4,107 @@ import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
 import io.ktor.http.*
+import io.ktor.client.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
 import com.example.kmp.networking.models.ServiceConfig
-import com.netflix.discovery.EurekaClient
-import com.netflix.discovery.DiscoveryClient
-import com.netflix.discovery.DefaultEurekaClientConfig
-import com.netflix.appinfo.ApplicationInfoManager
-import com.netflix.appinfo.MyDataCenterInstanceConfig
-import com.netflix.appinfo.providers.EurekaConfigBasedInstanceInfoProvider
+import kotlinx.coroutines.*
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class ServiceRegistrationRequest(
+    val id: String,
+    val serviceName: String,
+    val host: String,
+    val port: Int,
+    val status: String,
+    val metadata: Map<String, String> = emptyMap()
+)
+
+@Serializable
+data class ServiceRegistrationResponse(
+    val id: String,
+    val serviceName: String,
+    val status: String
+)
 
 /**
  * Extension function to configure service discovery and configuration for a Ktor application
  */
 fun Application.configureServiceDiscovery(serviceConfig: ServiceConfig) {
-    // Configure Eureka client
-    System.setProperty("eureka.name", serviceConfig.serviceName)
-    System.setProperty("eureka.registration.enabled", "true")
-    System.setProperty("eureka.port", serviceConfig.serviceUrl.substringAfterLast(":"))
-    System.setProperty("eureka.serviceUrl.default", "${serviceConfig.registryUrl}/eureka/")
-    
-    // Configure heartbeat and lease
-    System.setProperty("eureka.heartbeat.enabled", "true")
-    System.setProperty("eureka.instance.leaseRenewalIntervalInSeconds", "30")
-    System.setProperty("eureka.instance.leaseExpirationDurationInSeconds", "90")
-    
-    // Configure instance
-    System.setProperty("eureka.instance.preferIpAddress", serviceConfig.preferIpAddress.toString())
-    System.setProperty("eureka.instance.instanceId", serviceConfig.instanceId)
-    System.setProperty("eureka.instance.vipAddress", serviceConfig.vipAddress)
-    System.setProperty("eureka.instance.secureVipAddress", serviceConfig.secureVipAddress)
-    System.setProperty("eureka.instance.appname", serviceConfig.serviceName.uppercase())
-    System.setProperty("eureka.instance.virtualHostName", serviceConfig.vipAddress)
-    System.setProperty("eureka.instance.secureVirtualHostName", serviceConfig.secureVipAddress)
-
-    // Create Eureka instance configuration with custom config
-    val instanceConfig = object : MyDataCenterInstanceConfig() {
-        override fun getLeaseRenewalIntervalInSeconds(): Int = 30
-        override fun getLeaseExpirationDurationInSeconds(): Int = 90
-        override fun getSecurePortEnabled(): Boolean = false
-        override fun isNonSecurePortEnabled(): Boolean = true
-        override fun getVirtualHostName(): String = serviceConfig.vipAddress
-        override fun getSecureVirtualHostName(): String = serviceConfig.secureVipAddress
-        override fun getAppname(): String = serviceConfig.serviceName.uppercase()
-        override fun getInstanceId(): String = serviceConfig.instanceId
+    val client = HttpClient {
+        install(ContentNegotiation) {
+            json()
+        }
     }
-    val instanceInfoProvider = EurekaConfigBasedInstanceInfoProvider(instanceConfig)
-    val instanceInfo = instanceInfoProvider.get()
-    val applicationInfoManager = ApplicationInfoManager(instanceConfig, instanceInfo)
     
-    // Create and initialize Eureka client
-    val eurekaClient: EurekaClient = DiscoveryClient(
-        applicationInfoManager,
-        DefaultEurekaClientConfig()
-    )
+    // Start registration and heartbeat process
+    val registrationJob = launch {
+        try {
+            // Parse service URL for host and port
+            val serviceUrl = serviceConfig.serviceUrl.removePrefix("http://")
+            val host = serviceUrl.substringBefore(":")
+            val port = serviceUrl.substringAfter(":").toInt()
+            
+            // Register service
+            val registrationRequest = ServiceRegistrationRequest(
+                id = serviceConfig.instanceId,
+                serviceName = serviceConfig.serviceName,
+                host = host,
+                port = port,
+                status = "UP"
+            )
+            
+            val response: HttpResponse = client.post("${serviceConfig.registryUrl}/services") {
+                contentType(ContentType.Application.Json)
+                setBody(registrationRequest)
+            }
+            
+            if (response.status.isSuccess()) {
+                log.info("Successfully registered service ${serviceConfig.serviceName}")
+                
+                // Start heartbeat
+                while (isActive) {
+                    delay(30.seconds)
+                    try {
+                        val heartbeatResponse: HttpResponse = client.put("${serviceConfig.registryUrl}/services/${serviceConfig.instanceId}/heartbeat")
+                        if (heartbeatResponse.status.isSuccess()) {
+                            log.debug("Heartbeat sent successfully")
+                        } else {
+                            log.error("Failed to send heartbeat: ${heartbeatResponse.status}")
+                        }
+                    } catch (e: Exception) {
+                        log.error("Failed to send heartbeat", e)
+                    }
+                }
+            } else {
+                log.error("Failed to register service: ${response.status}")
+            }
+        } catch (e: Exception) {
+            log.error("Failed to register service", e)
+        }
+    }
 
     // Register shutdown hook
     environment.monitor.subscribe(ApplicationStopping) {
-        eurekaClient.shutdown()
+        runBlocking {
+            registrationJob.cancelAndJoin() // Cancel the registration/heartbeat job
+            try {
+                val response: HttpResponse = client.delete("${serviceConfig.registryUrl}/services/${serviceConfig.instanceId}")
+                if (response.status.isSuccess()) {
+                    log.info("Successfully deregistered service ${serviceConfig.serviceName}")
+                } else {
+                    log.error("Failed to deregister service: ${response.status}")
+                }
+            } catch (e: Exception) {
+                log.error("Failed to deregister service", e)
+            } finally {
+                client.close()
+            }
+        }
     }
 
     // Register health check endpoint

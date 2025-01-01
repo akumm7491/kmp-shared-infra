@@ -4,15 +4,12 @@ import com.example.kmp.service.registry.model.ServiceInstance
 import com.example.kmp.services.base.KMPService
 import com.example.kmp.networking.configureServiceRegistry
 import com.example.kmp.networking.models.ServiceRegistryConfig
+import com.example.kmp.monitoring.KtorMonitoringFactory
+import com.example.kmp.service.registry.routes.registerServiceEndpoints
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.http.*
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
-import com.netflix.eureka.registry.PeerAwareInstanceRegistry
-import com.netflix.eureka.registry.PeerAwareInstanceRegistryImpl
 
 class DynamicServiceRegistry : KMPService(
     projectId = "kmp",
@@ -20,105 +17,37 @@ class DynamicServiceRegistry : KMPService(
     isServiceRegistry = true
 ) {
     private val servicesByName = ConcurrentHashMap<String, MutableMap<String, ServiceInstance>>()
-    private lateinit var eurekaRegistry: PeerAwareInstanceRegistry
 
-    override fun Application.configureCustomService() {
+    override fun Application.configureService() {
+        log().info("Configuring Dynamic Service Registry")
 
         // Configure service registry
         configureServiceRegistry(ServiceRegistryConfig(
             port = environment.config.propertyOrNull("ktor.deployment.port")?.getString()?.toInt() ?: 8761,
             enableSelfPreservation = false,
-            renewalPercentThreshold = 0.85
+            renewalPercentThreshold = 0.85,
+            peerEurekaNodes = emptyList()
         ))
 
-        // Configure custom registry routes
-        routing {
-            registerServiceEndpoints()
-            registerEurekaEndpoints()
-        }
+        // Log successful configuration
+        log().info("Dynamic Service Registry configured successfully")
     }
 
-    fun Routing.registerServiceEndpoints() {
-        post("/services") {
-            val instance = call.receive<ServiceInstance>()
-            val registeredInstance = register(instance)
-            call.respond(HttpStatusCode.Created, registeredInstance)
-        }
-
-        get("/services") {
-            call.respond(getAllInstances())
-        }
-
-        get("/services/{id}") {
-            val id = call.parameters["id"] ?: throw IllegalArgumentException("Missing id")
-            val instance = getInstance(id)
-            if (instance != null) {
-                call.respond(instance)
-            } else {
-                call.respond(HttpStatusCode.NotFound)
-            }
-        }
-
-        delete("/services/{id}") {
-            val id = call.parameters["id"] ?: throw IllegalArgumentException("Missing id")
-            if (deregister(id)) {
-                call.respond(HttpStatusCode.OK)
-            } else {
-                call.respond(HttpStatusCode.NotFound)
-            }
-        }
-
-        put("/services/{id}/heartbeat") {
-            val id = call.parameters["id"] ?: throw IllegalArgumentException("Missing id")
-            val instance = heartbeat(id)
-            if (instance != null) {
-                call.respond(instance)
-            } else {
-                call.respond(HttpStatusCode.NotFound)
-            }
-        }
-
-        get("/services/{id}/status") {
-            val id = call.parameters["id"] ?: throw IllegalArgumentException("Missing id")
-            val status = getStatus(id)
-            if (status != null) {
-                call.respond(status)
-            } else {
-                call.respond(HttpStatusCode.NotFound)
-            }
-        }
-    }
-
-    fun Routing.registerEurekaEndpoints() {
-        // Implement Eureka-compatible endpoints
-        get("/eureka/apps") {
-            val instances = getAllInstances()
-            call.respond(instances.groupBy { it.serviceName })
-        }
-
-        get("/eureka/apps/{appId}") {
-            val appId = call.parameters["appId"] ?: throw IllegalArgumentException("Missing appId")
-            val instances = getInstancesByService(appId)
-            if (instances.isNotEmpty()) {
-                call.respond(instances)
-            } else {
-                call.respond(HttpStatusCode.NotFound)
-            }
-        }
-
-        get("/eureka/vips/{vipAddress}") {
-            val vipAddress = call.parameters["vipAddress"] ?: throw IllegalArgumentException("Missing vipAddress")
-            val instances = getAllInstances().filter { it.serviceName == vipAddress }
-            if (instances.isNotEmpty()) {
-                call.respond(instances)
-            } else {
-                call.respond(HttpStatusCode.NotFound)
-            }
-        }
+    override fun Routing.configureRoutes() {
+        registerServiceEndpoints(this@DynamicServiceRegistry)
     }
 
     fun register(instance: ServiceInstance): ServiceInstance {
         log().info("Registering instance: ${instance.id} for service: ${instance.serviceName}")
+        
+        // Check if instance already exists
+        servicesByName.forEach { (_, services) ->
+            services[instance.id]?.let { existingInstance ->
+                log().warn("Instance ${instance.id} already registered, updating status")
+                return updateStatus(instance.id, instance.status) ?: existingInstance
+            }
+        }
+        
         val services = servicesByName.computeIfAbsent(instance.serviceName) { 
             log().info("Creating new service map for: ${instance.serviceName}")
             ConcurrentHashMap() 

@@ -28,3 +28,4 @@ include(":tools")
 
 // Examples
 include(":examples:weather-service")
+include(":examples:template-service")

@@ -22,15 +22,15 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(libs.kotlin.stdlib)
-                implementation(libs.kotlinx.coroutines)
-                implementation(libs.kotlinx.serialization.json)
+                api(libs.kotlin.stdlib)
+                api(libs.kotlinx.coroutines)
+                api(libs.kotlinx.serialization.json)
             }
         }
         
         val commonTest by getting {
             dependencies {
-                api(project(":common-libs:testing-module"))
+                implementation(project(":common-libs:testing-module"))
                 implementation(kotlin("test"))
                 implementation(kotlin("test-common"))
                 implementation(kotlin("test-annotations-common"))
@@ -39,13 +39,13 @@ kotlin {
         
         val jvmMain by getting {
             dependencies {
-                // Kafka and Schema Registry
-                implementation(libs.kafka.clients)
-                implementation(libs.kafka.schema.registry)
-                implementation(libs.kafka.avro.serializer)
-                implementation(libs.avro)
+                // Core messaging dependencies that services need
+                api(libs.kafka.clients)
+                api(libs.kafka.schema.registry)
+                api(libs.kafka.avro.serializer)
+                api(libs.avro)
                 
-                // Reflection and Logging
+                // Internal dependencies
                 implementation(libs.kotlin.reflect)
                 implementation(libs.reflections)
                 implementation(libs.slf4j.api)

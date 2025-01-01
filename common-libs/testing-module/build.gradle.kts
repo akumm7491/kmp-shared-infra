@@ -91,6 +91,11 @@ kotlin {
                 api(libs.jackson.databind)
                 api(libs.jackson.module.kotlin)
                 
+                // Testcontainers Dependencies
+                api(libs.testcontainers.core)
+                api(libs.testcontainers.kafka)
+                api(libs.kafka.clients)
+                
                 // Internal Module Dependencies
                 api(project(":common-libs:auth-module"))
                 api(project(":common-libs:monitoring-module"))

@@ -8,6 +8,8 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import com.example.kmp.monitoring.MonitoringFactory
 import com.example.kmp.monitoring.LogProvider
+import com.example.kmp.networking.configureServiceDiscovery
+import com.example.kmp.networking.models.ServiceConfig
 import kotlinx.serialization.json.Json
 
 abstract class BaseService(
@@ -16,22 +18,16 @@ abstract class BaseService(
 ) {
     private lateinit var logger: LogProvider
 
+    protected abstract fun getServiceConfig(): ServiceConfig
+
     fun Application.configureBase() {
         // Initialize monitoring and logging
         logger = MonitoringFactory.createLogProvider("$projectId-$serviceName")
         val metricsProvider = MonitoringFactory.createMetricsProvider()
         metricsProvider.install(this)
 
-        // Load project-specific config
-        val config = ConfigClient("http://config-server:8888")
-            .loadConfig("$projectId-$serviceName", projectId)
-        
-        // Register with service discovery
-        install(EurekaClient) {
-            serviceName = "$projectId-$serviceName"
-            serviceUrl = "http://service-registry:8761/eureka"
-            metadata["project"] = projectId
-        }
+        // Configure service discovery with our custom implementation
+        configureServiceDiscovery(getServiceConfig())
 
         // Configure content negotiation
         install(ContentNegotiation) {
@@ -89,11 +85,11 @@ abstract class BaseService(
         }
         
         // Configure custom service
-        configureService(config)
+        configureService()
     }
     
     // To be implemented by specific services
-    abstract fun Application.configureService(config: Config)
+    abstract fun Application.configureService()
 
     // Helper function for services to access logger
     protected fun getLogger(): LogProvider = logger

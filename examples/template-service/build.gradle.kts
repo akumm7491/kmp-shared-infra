@@ -1,7 +1,8 @@
 plugins {
     kotlin("jvm")
-    id("io.ktor.plugin")
-    id("application")
+    kotlin("plugin.serialization")
+    application
+    id("com.github.johnrengelman.shadow") version "8.1.1"  // For fat JAR creation
 }
 
 application {
@@ -9,32 +10,48 @@ application {
 }
 
 dependencies {
-    implementation(project(":common-libs:auth-module"))
+    // KMP Common Modules
+    implementation(project(":common-libs:services-module"))
     implementation(project(":common-libs:messaging-module"))
+    implementation(project(":common-libs:monitoring-module"))
     implementation(project(":common-libs:storage-module"))
-
-    implementation("io.ktor:ktor-server-core:2.3.6")
-    implementation("io.ktor:ktor-server-netty:2.3.6")
-    implementation("io.ktor:ktor-server-auth:2.3.6")
-    implementation("io.ktor:ktor-server-content-negotiation:2.3.6")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.6")
-    implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation(project(":common-libs:auth-module"))
+    implementation(project(":common-libs:networking-module"))
+    implementation(project(":common-libs:validation-module"))
     
-    // Metrics
-    implementation("io.ktor:ktor-server-metrics-micrometer:2.3.6")
-    implementation("io.micrometer:micrometer-registry-prometheus:1.11.5")
+    // Koin
+    implementation(libs.koin.core)
+    implementation(libs.koin.ktor)
+    implementation(libs.koin.logger)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.slf4j.api)
+    implementation(libs.logback)    // Required for logging implementation
+    
+    // Jakarta Validation
+    implementation(libs.jakarta.validation.api)
+    implementation(libs.hibernate.validator)
     
     // Testing
-    testImplementation("io.ktor:ktor-server-test-host:2.3.6")
-    testImplementation("org.jetbrains.kotlin:kotlin-test")
-    testImplementation("org.testcontainers:testcontainers:1.19.3")
-    testImplementation("org.testcontainers:kafka:1.19.3")
-    testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
-    testImplementation("io.kotest:kotest-assertions-core:5.8.0")
-    testImplementation("io.mockk:mockk:1.13.8")
-    testImplementation("org.apache.kafka:kafka-clients:3.6.1")
+    testImplementation(project(":common-libs:testing-module"))
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// Use shadowJar instead of custom fat JAR task
+tasks.shadowJar {
+    archiveBaseName.set("template-service")
+    archiveClassifier.set("")
+    archiveVersion.set("")
+    manifest {
+        attributes(
+            mapOf(
+                "Main-Class" to "com.example.kmp.template.ApplicationKt",
+                "Implementation-Title" to "Template Service",
+                "Implementation-Version" to project.version
+            )
+        )
+    }
+    mergeServiceFiles()
 }

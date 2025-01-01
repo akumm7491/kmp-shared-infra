@@ -21,7 +21,6 @@ dependencies {
     implementation(project(":common-libs:networking-module"))
 
     // Service Discovery & Configuration
-    implementation(libs.netflix.eureka.client)
     implementation(libs.typesafe.config)
 
     // Ktor Server
