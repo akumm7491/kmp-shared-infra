@@ -1,0 +1,61 @@
+name: Build and Deploy Infrastructure
+
+on:
+  workflow_call:
+    inputs:
+      cloud_provider:
+        description: 'Cloud provider to deploy to (aws, gcp, azure)'
+        type: string
+        default: 'aws'
+      environment_type:
+        description: 'Environment type (staging, production)'
+        type: string
+        default: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+      custom_terraform_path:
+        description: 'Custom terraform configuration path'
+        type: string
+        required: false
+      custom_k8s_path:
+        description: 'Custom Kubernetes configuration path'
+        type: string
+        required: false
+      skip_monitoring:
+        description: 'Skip monitoring setup'
+        type: boolean
+        default: false
+      skip_istio:
+        description: 'Skip Istio setup'
+        type: boolean
+        default: false
+    secrets:
+      aws_access_key:
+        required: false
+      aws_secret_key:
+        required: false
+      gcp_credentials:
+        required: false
+      azure_credentials:
+        required: false
+
+jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml
+    with:
+      cloud_provider: ${{ inputs.cloud_provider }}
+      terraform_path: ${{ inputs.custom_terraform_path || './infra/terraform' }}
+      k8s_path: ${{ inputs.custom_k8s_path || './infra/k8s' }}
+
+  build:
+    uses: ./.github/workflows/build.yml
+    needs: validate
+    secrets: inherit
+
+  deploy:
+    uses: ./.github/workflows/deploy.yml
+    needs: build
+    with:
+      cloud_provider: ${{ inputs.cloud_provider }}
+      environment_type: ${{ inputs.environment_type }}
+      skip_monitoring: ${{ inputs.skip_monitoring }}
+      skip_istio: ${{ inputs.skip_istio }}
+    secrets: inherit 
