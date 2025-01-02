@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: template-service
+  namespace: default
+  labels:
+    app.kubernetes.io/name: template-service
+    app.kubernetes.io/part-of: kmp-services
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"
+spec:
+  selector:
+    app.kubernetes.io/name: template-service
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+    - name: metrics
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP 

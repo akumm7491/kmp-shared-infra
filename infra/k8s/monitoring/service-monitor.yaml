@@ -2,15 +2,19 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: kmp-services-monitor
-  namespace: monitoring
+  namespace: shared-monitoring
+  labels:
+    release: monitoring
 spec:
   selector:
     matchLabels:
       app.kubernetes.io/part-of: kmp-services
   namespaceSelector:
     matchNames:
+      - default
       - kmp-services
   endpoints:
   - port: metrics
     path: /metrics
     interval: 15s
+    scrapeTimeout: 10s

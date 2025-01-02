@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-registry
+  namespace: default
+  labels:
+    app.kubernetes.io/name: service-registry
+    app.kubernetes.io/part-of: kmp-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: service-registry
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: service-registry
+        app.kubernetes.io/part-of: kmp-services
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8761"
+        prometheus.io/path: "/actuator/prometheus"
+        sidecar.istio.io/inject: "false"
+    spec:
+      containers:
+        - name: service-registry
+          image: service-registry:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8761
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "8761"
+            - name: HOST
+              value: "0.0.0.0"
+            - name: APPLICATION_NAME
+              value: "service-registry"
+            - name: MONITORING_ENABLED
+              value: "true"
+            - name: SERVICE_PORT
+              value: "8761"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10 
