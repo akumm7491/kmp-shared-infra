@@ -1,0 +1,63 @@
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: kmp-telemetry
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      istio: sidecar
+  tracing:
+    - providers:
+      - name: zipkin
+      randomSamplingPercentage: 100.0
+  metrics:
+    - providers:
+      - name: prometheus
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: istio-monitoring
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      istio: sidecar
+  namespaceSelector:
+    any: true
+  endpoints:
+    - port: http-monitoring
+      path: /stats/prometheus
+      interval: 15s
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: stats-filter
+  namespace: istio-system
+spec:
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: SIDECAR_OUTBOUND
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: istio.stats
+          typed_config:
+            '@type': type.googleapis.com/udpa.type.v1.TypedStruct
+            type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+            value:
+              config:
+                root_id: stats_outbound
+                vm_config:
+                  vm_id: stats_outbound
+                  runtime: envoy.wasm.runtime.v8
+                  code:
+                    local:
+                      filename: /etc/istio/extensions/stats-filter.wasm 
