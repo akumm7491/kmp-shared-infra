@@ -1,32 +1,43 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+        google()
+    }
+    plugins {
+        kotlin("jvm") version "1.9.20"
+        kotlin("multiplatform") version "1.9.20"
+        kotlin("plugin.serialization") version "1.9.20"
+        id("com.github.johnrengelman.shadow") version "8.1.1"
+    }
+}
+
 rootProject.name = "kmp-shared-infra"
 
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
         gradlePluginPortal()
+        google()
     }
 }
 
-// Common libraries
-include(":common-libs:auth-module")
-include(":common-libs:messaging-module")
-include(":common-libs:monitoring-module")
-include(":common-libs:networking-module")
-include(":common-libs:storage-module")
-include(":common-libs:testing-module")
-include(":common-libs:validation-module")
-include(":common-libs:services-module")
-include(":common-libs:di-module")
-
-// Core infrastructure services
-include(":microservices:api-gateway")
-include(":microservices:service-registry")
-include(":microservices:config-server")
-include(":microservices:monitoring-service")
-
-// Tools
-include(":tools")
-
-// Examples
-include(":examples:weather-service")
-include(":examples:template-service")
+include(
+    ":tools",
+    ":common-libs:auth-module",
+    ":common-libs:di-module",
+    ":common-libs:messaging-module",
+    ":common-libs:monitoring-module",
+    ":common-libs:networking-module",
+    ":common-libs:services-module",
+    ":common-libs:storage-module",
+    ":common-libs:testing-module",
+    ":common-libs:validation-module",
+    ":common-libs:cicd-module",
+    ":examples:template-service",
+    ":examples:weather-service",
+    ":microservices:api-gateway",
+    ":microservices:config-server",
+    ":microservices:monitoring-service",
+    ":microservices:service-registry"
+)

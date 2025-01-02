@@ -1,7 +1,7 @@
 plugins {
-    alias(libs.plugins.kotlin.multiplatform) apply false
-    alias(libs.plugins.kotlin.serialization) apply false
     kotlin("jvm") version "1.9.20" apply false
+    kotlin("plugin.serialization") version "1.9.20" apply false
+    id("com.github.johnrengelman.shadow") version "8.1.1" apply false
 }
 
 allprojects {
@@ -30,19 +30,6 @@ subprojects {
             jvm {
                 jvmToolchain(17)
             }
-            sourceSets.all {
-                languageSettings.apply {
-                    optIn("kotlin.RequiresOptIn")
-                    optIn("kotlin.ExperimentalMultiplatform")
-                }
-            }
-        }
-    }
-
-    // Configuration for Kotlin JVM projects
-    plugins.withId("org.jetbrains.kotlin.jvm") {
-        configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
-            jvmToolchain(17)
         }
     }
 }
