@@ -1,0 +1,41 @@
+name: 'Configure Cloud Provider'
+description: 'Configure credentials for AWS, GCP, or Azure'
+inputs:
+  provider:
+    description: 'Cloud provider (aws, gcp, azure)'
+    required: true
+  aws_access_key:
+    description: 'AWS Access Key ID'
+    required: false
+  aws_secret_key:
+    description: 'AWS Secret Access Key'
+    required: false
+  gcp_credentials:
+    description: 'GCP Service Account JSON'
+    required: false
+  azure_credentials:
+    description: 'Azure Service Principal JSON'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configure AWS
+      if: inputs.provider == 'aws'
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ inputs.aws_access_key }}
+        aws-secret-access-key: ${{ inputs.aws_secret_key }}
+        aws-region: us-west-2
+
+    - name: Configure GCP
+      if: inputs.provider == 'gcp'
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ inputs.gcp_credentials }}
+
+    - name: Configure Azure
+      if: inputs.provider == 'azure'
+      uses: azure/login@v1
+      with:
+        creds: ${{ inputs.azure_credentials }} 

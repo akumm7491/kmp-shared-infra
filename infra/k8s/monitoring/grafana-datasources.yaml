@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitoring-grafana-datasources
+  namespace: shared-monitoring
+  labels:
+    grafana_datasource: "1"
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://monitoring-kube-prometheus-prometheus.shared-monitoring:9090/
+        access: proxy
+        isDefault: true
+        jsonData:
+          timeInterval: 30s
+          tlsSkipVerify: true
+      - name: Loki
+        type: loki
+        url: http://monitoring-loki.shared-monitoring:3100
+        access: proxy
+        isDefault: false
+        jsonData:
+          maxLines: 1000 

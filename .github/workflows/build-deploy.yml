@@ -2,13 +2,15 @@ name: Build and Deploy Infrastructure
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
     paths:
       - 'infra/**'
       - 'examples/**'
       - '.github/workflows/**'
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
     paths:
       - 'infra/**'
       - 'examples/**'
@@ -20,6 +22,7 @@ env:
   TF_VERSION: '1.5.0'
   ISTIO_VERSION: '1.24.2'
   KUBECTL_VERSION: '1.26.0'
+  CLOUD_PROVIDER: ${{ inputs.cloud_provider || 'aws' }}
   ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
 
 jobs:
@@ -38,12 +41,12 @@ jobs:
 
       - name: Terraform Init
         run: |
-          cd ./infra/terraform/${{ env.ENVIRONMENT }}
+          cd ./infra/terraform/${{ env.CLOUD_PROVIDER }}/${{ env.ENVIRONMENT }}
           terraform init
 
       - name: Terraform Validate
         run: |
-          cd ./infra/terraform/${{ env.ENVIRONMENT }}
+          cd ./infra/terraform/${{ env.CLOUD_PROVIDER }}/${{ env.ENVIRONMENT }}
           terraform validate
 
       - name: Validate Kubernetes Manifests
@@ -81,7 +84,7 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-          
+
           # Build and push each service
           for service in examples/*/; do
             if [ -f "$service/Dockerfile" ]; then
@@ -95,17 +98,20 @@ jobs:
     needs: validate
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    environment: ${{ env.ENVIRONMENT }}
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - name: Configure Cloud Credentials
+        uses: ./.github/actions/configure-cloud
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-2
+          provider: ${{ env.CLOUD_PROVIDER }}
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          gcp_credentials: ${{ secrets.GCP_CREDENTIALS }}
+          azure_credentials: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -114,12 +120,23 @@ jobs:
 
       - name: Terraform Init and Apply
         run: |
-          cd ./infra/terraform/${{ env.ENVIRONMENT }}
+          cd ./infra/terraform/${{ env.CLOUD_PROVIDER }}/${{ env.ENVIRONMENT }}
           terraform init
           terraform apply -auto-approve
 
       - name: Update kubeconfig
-        run: aws eks update-kubeconfig --name ${{ env.ENVIRONMENT }}-cluster
+        run: |
+          case ${{ env.CLOUD_PROVIDER }} in
+            aws)
+              aws eks update-kubeconfig --name ${{ env.ENVIRONMENT }}-cluster
+              ;;
+            gcp)
+              gcloud container clusters get-credentials ${{ env.ENVIRONMENT }}-cluster
+              ;;
+            azure)
+              az aks get-credentials --name ${{ env.ENVIRONMENT }}-cluster
+              ;;
+          esac
 
       - name: Install Istio
         run: |
@@ -136,7 +153,8 @@ jobs:
     needs: [build, deploy-infrastructure]
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    environment: ${{ env.ENVIRONMENT }}
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
 
     steps:
       - uses: actions/checkout@v3
@@ -182,7 +200,8 @@ jobs:
   post-deploy:
     needs: deploy-services
     runs-on: ubuntu-latest
-    environment: ${{ env.ENVIRONMENT }}
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
 
     steps:
       - name: Configure AWS credentials
@@ -199,7 +218,7 @@ jobs:
         run: |
           # Get Istio ingress gateway URL
           GATEWAY_URL=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          
+
           # Check each service endpoint
           for service in examples/*/; do
             service_name=$(basename $service)
@@ -212,7 +231,7 @@ jobs:
           kubectl port-forward -n monitoring svc/prometheus-operated 9090:9090 &
           sleep 5
           curl -s http://localhost:9090/-/ready || exit 1
-          
+
           # Check Grafana
           kubectl port-forward -n monitoring svc/grafana 3000:3000 &
           sleep 5
