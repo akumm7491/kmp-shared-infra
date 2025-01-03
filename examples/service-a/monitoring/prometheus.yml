@@ -1,7 +1,0 @@
-- targets:
-    - service-a:8081
-  labels:
-    service: service-a
-    environment: local
-    type: http-service
-    metrics_path: /metrics

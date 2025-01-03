@@ -18,7 +18,7 @@ object SchemaRegistrationExtension {
      * @param excludePackages Optional list of packages to exclude from scanning
      */
     fun initializeAndRegisterSchemas(
-        schemaRegistryUrl: String,
+        schemaRegistryUrl: String = System.getenv("SCHEMA_REGISTRY_URL") ?: "http://schema-registry.kafka:8081",
         basePackage: String,
         excludePackages: List<String> = emptyList()
     ) {

@@ -1,0 +1,61 @@
+apiVersion: skaffold/v4beta5
+kind: Config
+metadata:
+  name: kmp-shared-infra
+build:
+  artifacts:
+    - image: weather-service
+      context: .
+      docker:
+        dockerfile: examples/weather-service/Dockerfile
+        buildArgs:
+          GRADLE_BUILD_CMD: "build"
+      requires:
+        - image: template-service
+          alias: TEMPLATE_SERVICE
+    - image: template-service
+      context: .
+      docker:
+        dockerfile: examples/template-service/Dockerfile
+        buildArgs:
+          GRADLE_BUILD_CMD: "build"
+  local:
+    push: false
+    useBuildkit: true
+
+manifests:
+  rawYaml:
+    - infra/k8s/namespaces/namespaces.yaml
+    - infra/k8s/kafka/*.yaml
+    - infra/k8s/schema-registry/*.yaml
+    - examples/*/k8s/*.yaml
+
+profiles:
+  - name: dev
+    deploy:
+      kubectl:
+        defaultNamespace: apps
+        flags:
+          apply:
+            - --recursive
+            - --force
+    portForward:
+      - resourceType: service
+        resourceName: kafka
+        namespace: kafka
+        port: 9092
+        localPort: 9092
+      - resourceType: service
+        resourceName: schema-registry
+        namespace: kafka
+        port: 8081
+        localPort: 8081
+
+  - name: prod
+    deploy:
+      kubectl:
+        defaultNamespace: apps
+        flags:
+          apply:
+            - --recursive
+            - --force 

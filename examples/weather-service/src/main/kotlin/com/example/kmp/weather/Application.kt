@@ -20,7 +20,7 @@ import kotlinx.coroutines.*
 
 fun main() {
     // Initialize schema registration
-    val schemaRegistryUrl = System.getenv("SCHEMA_REGISTRY_URL") ?: "http://schema-registry:8081"
+    val schemaRegistryUrl = System.getenv("SCHEMA_REGISTRY_URL") ?: "http://schema-registry.kafka:8081"
     SchemaRegistrationExtension.initializeAndRegisterSchemas(
         schemaRegistryUrl = schemaRegistryUrl,
         basePackage = "com.example.kmp.weather.model"

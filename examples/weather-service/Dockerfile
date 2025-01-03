@@ -1,21 +1,25 @@
-FROM gradle:7.6.1-jdk17 as builder
+FROM gradle:8.5-jdk17 as builder
 
 WORKDIR /app
-COPY . .
-RUN gradle :examples:weather-service:build -x test
+
+# Copy the root project files
+COPY settings.gradle.kts .
+COPY build.gradle.kts .
+COPY gradle gradle
+COPY common-libs common-libs
+COPY examples/weather-service examples/weather-service
+
+# Build the weather service
+RUN gradle :examples:weather-service:shadowJar -x test
 
 FROM openjdk:17-slim
 
 WORKDIR /app
-COPY --from=builder /app/examples/weather-service/build/libs/*.jar ./weather-service.jar
+COPY --from=builder /app/examples/weather-service/build/libs/*-all.jar ./app.jar
 
-# Default to producer service
-ENV SERVICE_TYPE=producer
+ENV PORT=80
+ENV HOST=0.0.0.0
 
-EXPOSE 8084 8085
+EXPOSE 80
 
-CMD if [ "$SERVICE_TYPE" = "consumer" ]; then \
-      java -cp weather-service.jar com.example.kmp.weather.ConsumerApplicationKt; \
-    else \
-      java -cp weather-service.jar com.example.kmp.weather.ApplicationKt; \
-    fi
+CMD ["java", "-jar", "app.jar"]

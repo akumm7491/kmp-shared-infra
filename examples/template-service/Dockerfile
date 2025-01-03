@@ -1,14 +1,25 @@
-FROM gradle:8.5-jdk17 AS builder
+FROM gradle:8.5-jdk17 as builder
 
-COPY . /home/gradle/src
-WORKDIR /home/gradle/src
+WORKDIR /app
 
-RUN gradle :examples:template-service:shadowJar --no-daemon
+# Copy the root project files
+COPY settings.gradle.kts .
+COPY build.gradle.kts .
+COPY gradle gradle
+COPY common-libs common-libs
+COPY examples/template-service examples/template-service
+
+# Build the template service
+RUN gradle :examples:template-service:shadowJar -x test
 
 FROM openjdk:17-slim
 
-EXPOSE 8080
+WORKDIR /app
+COPY --from=builder /app/examples/template-service/build/libs/*-all.jar ./app.jar
 
-COPY --from=builder /home/gradle/src/examples/template-service/build/libs/template-service.jar /app/template-service.jar
+ENV PORT=80
+ENV HOST=0.0.0.0
 
-ENTRYPOINT ["java", "-jar", "/app/template-service.jar"]
+EXPOSE 80
+
+CMD ["java", "-jar", "app.jar"]

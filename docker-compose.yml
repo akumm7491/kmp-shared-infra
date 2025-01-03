@@ -133,9 +133,6 @@ services:
       - '9090:9090'
     volumes:
       - ./infra/k8s/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./examples/service-a/monitoring/service-a.yml:/etc/prometheus/targets/service-a.yml
-      - ./examples/service-b/monitoring/service-b.yml:/etc/prometheus/targets/service-b.yml
-      - ./examples/demo-service/monitoring/demo-service.yml:/etc/prometheus/targets/demo-service.yml
       - ./examples/template-service/monitoring/template-service.yml:/etc/prometheus/targets/template-service.yml
       - ./examples/weather-service/monitoring/weather-service.yml:/etc/prometheus/targets/weather-service.yml
     command:
